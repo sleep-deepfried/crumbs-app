@@ -1,14 +1,10 @@
 import { redirect } from 'next/navigation'
 import { getDashboardData } from './actions/user'
-import { signout } from './actions/auth'
-import Countertop from '@/components/Countertop'
-import MascotStage from '@/components/MascotStage'
-import StreakBoard from '@/components/StreakBoard'
-import FinancialCards from '@/components/FinancialCards'
 import CommunityTable from '@/components/CommunityTable'
 import BottomNav from '@/components/BottomNav'
-import QuickFinancialBanner from '@/components/QuickFinancialBanner'
+import MetricsGrid from '@/components/MetricsGrid'
 import Link from 'next/link'
+import { HelpCircle, Bell, Home, ShoppingCart, TrendingUp, DollarSign } from 'lucide-react'
 
 export default async function DashboardPage() {
   const data = await getDashboardData()
@@ -17,64 +13,68 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  const { user, safeToSpend, friends } = data
+  const { user, monthlyExpenses, friends, recentTransactions } = data
+
+  // Calculate monthly change (mock for now - you can add actual last month data later)
+  const lastMonthExpenses = 0 // TODO: Implement last month calculation
+  const monthlyChange = lastMonthExpenses > 0 
+    ? ((monthlyExpenses - lastMonthExpenses) / lastMonthExpenses) * 100
+    : 0
+
+  // Find largest expense
+  const expenseTransactions = recentTransactions.filter((t: { type: string; amount: number; category: string }) => t.type === 'EXPENSE')
+  let largestExpense: { category: string; amount: number } | null = null
+  
+  if (expenseTransactions.length > 0) {
+    let maxAmount = 0
+    let maxCategory = ''
+    
+    expenseTransactions.forEach((t: { amount: number; category: string }) => {
+      if (t.amount > maxAmount) {
+        maxAmount = t.amount
+        maxCategory = t.category
+      }
+    })
+    
+    largestExpense = { category: maxCategory, amount: maxAmount }
+  }
 
   return (
     <div className="min-h-screen bg-[#FDF6EC] pb-24">
-      {/* Header Bar */}
-      <div className="bg-[#4A3B32] text-white px-4 py-3 flex items-center justify-between">
+      {/* New Header */}
+      <div className="bg-[#FDF6EC] px-4 py-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">CRUMBS</h1>
-          <p className="text-xs opacity-80">@{user.username}</p>
+          <h1 className="greeting-text">Hi {user.username}!</h1>
         </div>
-        <form action={signout}>
-          <button
-            type="submit"
-            className="text-xs px-3 py-1 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
-          >
-            Sign Out
+        <div className="flex items-center gap-3">
+          <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all border border-[#E6C288]/30">
+            <HelpCircle size={24} className="text-[#D9534F]" strokeWidth={2} />
           </button>
-        </form>
+          <button className="w-12 h-12 rounded-full bg-[#A8D5BA] flex items-center justify-center shadow-sm hover:shadow-md transition-all">
+            <Bell size={24} className="text-white" strokeWidth={2} />
+          </button>
+        </div>
       </div>
 
-      {/* Quick Financial Summary */}
-      <QuickFinancialBanner
-        safeToSpend={safeToSpend}
-        totalSaved={user.totalSaved}
-        spendingLimit={user.spendingLimit}
-      />
-
-      {/* Main Content - Single Column Vertical Stack */}
+      {/* Main Content */}
       <div className="max-w-md mx-auto">
-        {/* The Countertop - Header with wood texture */}
-        <Countertop>
-          {/* Mascot Stage */}
-          <MascotStage mood={user.crumbMood} brewLevel={user.brewLevel} />
-
-          {/* Streak Board */}
-          <div className="mt-4">
-            <StreakBoard streak={user.currentStreak} />
-          </div>
-        </Countertop>
-
-        {/* Financial Menu Cards */}
-        <div className="mt-6">
-          <FinancialCards
-            safeToSpend={safeToSpend}
-            totalSaved={user.totalSaved}
-            spendingLimit={user.spendingLimit}
-          />
-        </div>
-
-        {/* Community Table - Friends */}
-        <div className="mt-6">
-          <CommunityTable friends={friends} />
-        </div>
+        {/* Metrics Grid */}
+        <MetricsGrid
+          totalSpending={monthlyExpenses}
+          monthlyChange={monthlyChange}
+          largestExpense={largestExpense}
+          totalIncome={user.monthlyIncome}
+        />
 
         {/* Recent Transactions */}
         <div className="mt-6 px-4">
-          <h3 className="text-sm font-semibold text-[#4A3B32] mb-3">Recent Activity</h3>
-          {data.recentTransactions.length === 0 ? (
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading">Recent Transactions</h3>
+            <Link href="/analytics" className="text-xs text-[#4A3B32]/60 hover:text-[#4A3B32]">
+              View All
+            </Link>
+          </div>
+          {recentTransactions.length === 0 ? (
             <div className="card-crumbs text-center py-8">
               <div className="text-5xl mb-3 animate-bounce">🥐</div>
               <p className="text-sm font-semibold text-[#4A3B32] mb-2">
@@ -92,26 +92,37 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {data.recentTransactions.map((transaction: { id: string; type: string; category: string; description: string | null; date: Date; amount: number }) => (
-                <div
-                  key={transaction.id}
-                  className="bg-white rounded-xl p-3 border border-[#E6C288] flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        transaction.type === 'INCOME'
-                          ? 'bg-[#A8D5BA]/20'
-                          : 'bg-[#E6C288]/20'
-                      }`}
-                    >
-                      <span className="text-lg">
-                        {transaction.category === 'NEEDS' && '🏠'}
-                        {transaction.category === 'WANTS' && '🎮'}
-                        {transaction.category === 'SAVINGS' && '💰'}
-                        {transaction.category === 'INCOME' && '💵'}
-                      </span>
-                    </div>
+              {recentTransactions.slice(0, 5).map((transaction: { id: string; type: string; category: string; description: string | null; date: Date; amount: number }) => {
+                const getCategoryIcon = () => {
+                  switch (transaction.category) {
+                    case 'NEEDS':
+                      return <Home size={20} className="text-[#4A3B32]" strokeWidth={2} />
+                    case 'WANTS':
+                      return <ShoppingCart size={20} className="text-[#4A3B32]" strokeWidth={2} />
+                    case 'SAVINGS':
+                      return <TrendingUp size={20} className="text-[#A8D5BA]" strokeWidth={2} />
+                    case 'INCOME':
+                      return <DollarSign size={20} className="text-[#A8D5BA]" strokeWidth={2} />
+                    default:
+                      return null
+                  }
+                }
+
+                return (
+                  <div
+                    key={transaction.id}
+                    className="bg-white rounded-xl p-3 border border-[#E6C288]/30 flex items-center justify-between hover:border-[#E6C288] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          transaction.type === 'INCOME'
+                            ? 'bg-[#A8D5BA]/20'
+                            : 'bg-[#E6C288]/20'
+                        }`}
+                      >
+                        {getCategoryIcon()}
+                      </div>
                     <div>
                       <p className="text-sm font-medium text-[#4A3B32]">
                         {transaction.category}
@@ -137,9 +148,26 @@ export default async function DashboardPage() {
                     {transaction.amount.toLocaleString()}
                   </p>
                 </div>
-              ))}
+              )
+              })}
             </div>
           )}
+        </div>
+
+        {/* Recurring Transactions Section */}
+        <div className="mt-6 px-4">
+          <h3 className="section-heading mb-3">Recurring Transactions</h3>
+          <div className="card-crumbs text-center py-6">
+            <p className="text-sm text-[#4A3B32]/60">No recurring transactions yet</p>
+            <p className="text-xs text-[#4A3B32]/40 mt-1">
+              Set up recurring expenses to track subscriptions
+            </p>
+          </div>
+        </div>
+
+        {/* Community Table - Friends */}
+        <div className="mt-6">
+          <CommunityTable friends={friends} />
         </div>
 
         {/* Bottom spacing for nav */}

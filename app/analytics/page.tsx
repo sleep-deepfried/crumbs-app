@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getDashboardData, getUserTransactions } from '../actions/user'
 import { signout } from '../actions/auth'
 import BottomNav from '@/components/BottomNav'
+import { Home, ShoppingCart, PiggyBank } from 'lucide-react'
 
 export default async function AnalyticsPage() {
   const data = await getDashboardData()
@@ -28,7 +29,7 @@ export default async function AnalyticsPage() {
       {/* Header Bar */}
       <div className="bg-[#4A3B32] text-white px-4 py-3 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">📊 Analytics</h1>
+          <h1 className="text-xl font-bold">Analytics</h1>
           <p className="text-xs opacity-80">@{user.username}</p>
         </div>
         <form action={signout}>
@@ -59,11 +60,9 @@ export default async function AnalyticsPage() {
                   <div key={category}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">
-                          {category === 'NEEDS' && '🏠'}
-                          {category === 'WANTS' && '🎮'}
-                          {category === 'SAVINGS' && '💰'}
-                        </span>
+                        {category === 'NEEDS' && <Home size={18} className="text-[#4A3B32]" strokeWidth={2} />}
+                        {category === 'WANTS' && <ShoppingCart size={18} className="text-[#4A3B32]" strokeWidth={2} />}
+                        {category === 'SAVINGS' && <PiggyBank size={18} className="text-[#A8D5BA]" strokeWidth={2} />}
                         <span className="text-sm font-semibold text-[#4A3B32]">{category}</span>
                       </div>
                       <span className="text-sm font-bold text-[#4A3B32]">
@@ -105,11 +104,11 @@ export default async function AnalyticsPage() {
           <h2 className="text-lg font-bold text-[#4A3B32] mb-3">💡 Insights</h2>
           <div className="space-y-2">
             <p className="text-sm text-[#4A3B32]">
-              • You're tracking your spending consistently! 🎉
+              • You&apos;re tracking your spending consistently! 🎉
             </p>
             {user.currentStreak >= 7 && (
               <p className="text-sm text-[#4A3B32]">
-                • {user.currentStreak} day streak - You're on fire! 🔥
+                • {user.currentStreak} day streak - You&apos;re on fire! 🔥
               </p>
             )}
             {user.totalSaved >= 50000 && (

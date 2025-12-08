@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getDashboardData } from '../actions/user'
 import { signout } from '../actions/auth'
 import BottomNav from '@/components/BottomNav'
+import { DollarSign, TrendingDown, PiggyBank } from 'lucide-react'
 
 export default async function WalletPage() {
   const data = await getDashboardData()
@@ -16,8 +17,8 @@ export default async function WalletPage() {
     <div className="min-h-screen bg-[#FDF6EC] pb-24">
       {/* Header Bar */}
       <div className="bg-[#4A3B32] text-white px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">💰 Wallet</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold">Wallet</h1>
           <p className="text-xs opacity-80">@{user.username}</p>
         </div>
         <form action={signout}>
@@ -40,7 +41,7 @@ export default async function WalletPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-[#A8D5BA]/20 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">💵</span>
+                  <DollarSign size={24} className="text-[#A8D5BA]" strokeWidth={2} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#4A3B32]">Income</p>
@@ -56,7 +57,7 @@ export default async function WalletPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-[#E6C288]/20 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">💸</span>
+                  <TrendingDown size={24} className="text-[#E6C288]" strokeWidth={2} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#4A3B32]">Expenses</p>
@@ -72,7 +73,7 @@ export default async function WalletPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-[#A8D5BA]/20 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">🏦</span>
+                  <PiggyBank size={24} className="text-[#A8D5BA]" strokeWidth={2} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#4A3B32]">Total Saved</p>

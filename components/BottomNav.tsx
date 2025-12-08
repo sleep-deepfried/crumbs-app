@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Home, Wallet, Plus, BarChart3, User } from 'lucide-react'
 
 export default function BottomNav() {
   const pathname = usePathname()
@@ -10,32 +11,28 @@ export default function BottomNav() {
     {
       name: 'Home',
       href: '/',
-      icon: '🏠',
-      activeIcon: '🏠',
+      icon: Home,
     },
     {
       name: 'Wallet',
       href: '/wallet',
-      icon: '💰',
-      activeIcon: '💰',
+      icon: Wallet,
     },
     {
       name: 'Add',
       href: '/add',
-      icon: '➕',
+      icon: Plus,
       isCenter: true,
     },
     {
       name: 'Analytics',
       href: '/analytics',
-      icon: '📊',
-      activeIcon: '📊',
+      icon: BarChart3,
     },
     {
       name: 'Profile',
       href: '/profile',
-      icon: '👤',
-      activeIcon: '👤',
+      icon: User,
     },
   ]
 
@@ -45,6 +42,7 @@ export default function BottomNav() {
         <div className="flex items-center justify-around h-20">
           {navItems.map((item) => {
             const isActive = pathname === item.href
+            const Icon = item.icon
             
             if (item.isCenter) {
               return (
@@ -54,7 +52,7 @@ export default function BottomNav() {
                   className="flex flex-col items-center justify-center -mt-8"
                 >
                   <div className="w-16 h-16 bg-[#4A3B32] rounded-full flex items-center justify-center shadow-lg hover:bg-[#4A3B32]/90 active:scale-95 transition-all border-4 border-white">
-                    <span className="text-3xl">{item.icon}</span>
+                    <Icon size={28} className="text-white" strokeWidth={2} />
                   </div>
                 </Link>
               )
@@ -64,15 +62,17 @@ export default function BottomNav() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex flex-col items-center justify-center min-w-[60px] py-2 px-3 rounded-lg transition-all ${
+                className={`flex flex-col items-center justify-center min-w-[60px] py-2 px-3 rounded-lg transition-all relative ${
                   isActive
                     ? 'text-[#4A3B32]'
                     : 'text-[#4A3B32]/40 hover:text-[#4A3B32]/70'
                 }`}
               >
-                <span className="text-2xl mb-1">
-                  {isActive ? item.activeIcon : item.icon}
-                </span>
+                <Icon 
+                  size={24} 
+                  className="mb-1" 
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
                 <span
                   className={`text-[10px] font-semibold ${
                     isActive ? 'text-[#4A3B32]' : 'text-[#4A3B32]/40'

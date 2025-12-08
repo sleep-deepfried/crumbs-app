@@ -48,3 +48,20 @@ export function getMonthEnd(): Date {
   return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
 }
 
+export function getResponsiveFontSize(value: string | number): string {
+  const stringValue = value.toString()
+  const length = stringValue.length
+  
+  // Small numbers (up to 6 characters): ₱1,234
+  if (length <= 6) return 'text-3xl'
+  
+  // Medium numbers (7-9 characters): ₱12,345
+  if (length <= 9) return 'text-2xl'
+  
+  // Large numbers (10-12 characters): ₱123,456.00
+  if (length <= 12) return 'text-xl'
+  
+  // Very large numbers (13+ characters): ₱1,234,567.00
+  return 'text-lg'
+}
+
