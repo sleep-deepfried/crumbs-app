@@ -1,0 +1,64 @@
+// CRUMBS Database Schema
+// Supabase + Prisma configuration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String   @id @default(uuid()) // Supabase Auth ID
+  username       String   @unique
+  email          String   @unique
+  avatarUrl      String?
+  
+  // Financial Targets
+  monthlyIncome  Float    @default(69500)
+  spendingLimit  Float    @default(39500)
+  totalSaved     Float    @default(0) // Affects Brew's vessel type
+  
+  // Gamification State
+  currentStreak  Int      @default(0)
+  crumbMood      String   @default("HARMONY") // HARMONY, CRUMBLY, SOGGY
+  brewLevel      Int      @default(1) // 1=Glass, 2=Mug, 3=Press
+  
+  transactions   Transaction[]
+  friends        Friendship[]  @relation("UserFriends")
+  friendOf       Friendship[]  @relation("FriendUsers")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Friendship {
+  id        String   @id @default(uuid())
+  userId    String
+  friendId  String
+  user      User     @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendUsers", fields: [friendId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Float
+  type        String   // "EXPENSE" or "INCOME"
+  category    String   // NEEDS, WANTS, SAVINGS, INCOME
+  description String?
+  date        DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([date])
+}

@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#4A3B32"/>
+  
+  <!-- Croissant -->
+  <circle cx="330" cy="300" r="90" fill="#E6C288"/>
+  <circle cx="330" cy="300" r="80" fill="#F4D9A6"/>
+  
+  <!-- Coffee Cup -->
+  <rect x="140" y="240" width="100" height="120" rx="8" fill="#FDF6EC"/>
+  <rect x="150" y="250" width="80" height="100" fill="#4A3B32"/>
+  
+  <!-- Steam -->
+  <path d="M 170 230 Q 175 210 170 200" stroke="#A8D5BA" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 190 230 Q 195 210 190 200" stroke="#A8D5BA" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 210 230 Q 215 210 210 200" stroke="#A8D5BA" stroke-width="6" stroke-linecap="round" fill="none"/>
+  
+  <!-- CRUMBS Text -->
+  <text x="256" y="450" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#FDF6EC" text-anchor="middle">CRUMBS</text>
+</svg>
+

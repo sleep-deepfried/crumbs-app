@@ -1,65 +1,153 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation'
+import { getDashboardData } from './actions/user'
+import { signout } from './actions/auth'
+import Countertop from '@/components/Countertop'
+import MascotStage from '@/components/MascotStage'
+import StreakBoard from '@/components/StreakBoard'
+import FinancialCards from '@/components/FinancialCards'
+import CommunityTable from '@/components/CommunityTable'
+import BottomNav from '@/components/BottomNav'
+import QuickFinancialBanner from '@/components/QuickFinancialBanner'
+import Link from 'next/link'
 
-export default function Home() {
+export default async function DashboardPage() {
+  const data = await getDashboardData()
+
+  if (!data) {
+    redirect('/auth/login')
+  }
+
+  const { user, safeToSpend, friends } = data
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-[#FDF6EC] pb-24">
+      {/* Header Bar */}
+      <div className="bg-[#4A3B32] text-white px-4 py-3 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold">CRUMBS</h1>
+          <p className="text-xs opacity-80">@{user.username}</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <form action={signout}>
+          <button
+            type="submit"
+            className="text-xs px-3 py-1 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Sign Out
+          </button>
+        </form>
+      </div>
+
+      {/* Quick Financial Summary */}
+      <QuickFinancialBanner
+        safeToSpend={safeToSpend}
+        totalSaved={user.totalSaved}
+        spendingLimit={user.spendingLimit}
+      />
+
+      {/* Main Content - Single Column Vertical Stack */}
+      <div className="max-w-md mx-auto">
+        {/* The Countertop - Header with wood texture */}
+        <Countertop>
+          {/* Mascot Stage */}
+          <MascotStage mood={user.crumbMood} brewLevel={user.brewLevel} />
+
+          {/* Streak Board */}
+          <div className="mt-4">
+            <StreakBoard streak={user.currentStreak} />
+          </div>
+        </Countertop>
+
+        {/* Financial Menu Cards */}
+        <div className="mt-6">
+          <FinancialCards
+            safeToSpend={safeToSpend}
+            totalSaved={user.totalSaved}
+            spendingLimit={user.spendingLimit}
+          />
         </div>
-      </main>
+
+        {/* Community Table - Friends */}
+        <div className="mt-6">
+          <CommunityTable friends={friends} />
+        </div>
+
+        {/* Recent Transactions */}
+        <div className="mt-6 px-4">
+          <h3 className="text-sm font-semibold text-[#4A3B32] mb-3">Recent Activity</h3>
+          {data.recentTransactions.length === 0 ? (
+            <div className="card-crumbs text-center py-8">
+              <div className="text-5xl mb-3 animate-bounce">🥐</div>
+              <p className="text-sm font-semibold text-[#4A3B32] mb-2">
+                Ready for your first crumb?
+              </p>
+              <p className="text-xs text-[#4A3B32]/60 mb-4">
+                Track your spending to keep BUN happy!
+              </p>
+              <Link
+                href="/add"
+                className="inline-block bg-[#4A3B32] text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-[#4A3B32]/90 active:scale-95 transition-all shadow-lg"
+              >
+                ✨ Add First Transaction
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {data.recentTransactions.map((transaction: { id: string; type: string; category: string; description: string | null; date: Date; amount: number }) => (
+                <div
+                  key={transaction.id}
+                  className="bg-white rounded-xl p-3 border border-[#E6C288] flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        transaction.type === 'INCOME'
+                          ? 'bg-[#A8D5BA]/20'
+                          : 'bg-[#E6C288]/20'
+                      }`}
+                    >
+                      <span className="text-lg">
+                        {transaction.category === 'NEEDS' && '🏠'}
+                        {transaction.category === 'WANTS' && '🎮'}
+                        {transaction.category === 'SAVINGS' && '💰'}
+                        {transaction.category === 'INCOME' && '💵'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-[#4A3B32]">
+                        {transaction.category}
+                      </p>
+                      {transaction.description && (
+                        <p className="text-xs text-[#4A3B32]/60">
+                          {transaction.description}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-[#4A3B32]/40">
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <p
+                    className={`text-lg font-bold ${
+                      transaction.type === 'INCOME'
+                        ? 'text-[#A8D5BA]'
+                        : 'text-[#4A3B32]'
+                    }`}
+                  >
+                    {transaction.type === 'INCOME' ? '+' : '-'}₱
+                    {transaction.amount.toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom spacing for nav */}
+        <div className="h-8" />
+      </div>
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
-  );
+  )
 }
