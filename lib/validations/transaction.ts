@@ -12,7 +12,7 @@ export const transactionSchema = z.object({
   selectedCategory: z.string().optional(),
   mainCategory: z.string().optional(),
   description: z.string().max(100, 'Description must be 100 characters or less').optional(),
-  isRecurring: z.boolean().default(false),
+  isRecurring: z.boolean(),
   frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'] as const).optional(),
   startDate: z.string().optional(),
 }).refine(

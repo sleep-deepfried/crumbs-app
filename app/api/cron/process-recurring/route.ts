@@ -60,9 +60,7 @@ export async function GET(request: Request) {
         const nextOccurrence = calculateNextOccurrence(
           recurring.nextOccurrence,
           recurring.frequency,
-          recurring.interval,
-          recurring.dayOfWeek,
-          recurring.dayOfMonth
+          recurring.interval
         )
 
         // Check if we should deactivate (past end date)
@@ -107,9 +105,7 @@ export async function GET(request: Request) {
 function calculateNextOccurrence(
   current: Date,
   frequency: string,
-  interval: number,
-  dayOfWeek: number | null,
-  dayOfMonth: number | null
+  interval: number
 ): Date {
   switch (frequency) {
     case 'DAILY':

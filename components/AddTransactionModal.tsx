@@ -54,8 +54,6 @@ export default function AddTransactionModal({
   const selectedCategory = watch("selectedCategory");
   const isRecurring = watch("isRecurring");
   const frequency = watch("frequency");
-  const amount = watch("amount");
-  const description = watch("description");
 
   // UI state
   const [showCategoryPopup, setShowCategoryPopup] = useState(false);
@@ -239,7 +237,9 @@ export default function AddTransactionModal({
         );
         if (result.success) {
           showSuccess(
-            `${data.category === "INCOME" ? "Income" : "Expense"} added successfully`
+            `${
+              data.category === "INCOME" ? "Income" : "Expense"
+            } added successfully`
           );
           onClose();
           router.refresh();
@@ -248,7 +248,7 @@ export default function AddTransactionModal({
           showError(result.error || "Failed to add transaction");
         }
       }
-    } catch (error) {
+    } catch {
       setLoading(false);
       showError("An unexpected error occurred");
     }
@@ -271,8 +271,8 @@ export default function AddTransactionModal({
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="modal-backdrop" 
+    <div
+      className="modal-backdrop"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -283,7 +283,9 @@ export default function AddTransactionModal({
         <div className="bg-[#4A3B32] text-white rounded-t-3xl">
           {/* Category Tabs in Header */}
           <div className="relative px-4 pt-6">
-            <h2 id="transaction-modal-title" className="sr-only">Add Transaction</h2>
+            <h2 id="transaction-modal-title" className="sr-only">
+              Add Transaction
+            </h2>
             <div className="flex" role="tablist" aria-label="Transaction type">
               {(["EXPENSE", "INCOME"] as TransactionCategory[]).map((cat) => (
                 <button
@@ -324,7 +326,7 @@ export default function AddTransactionModal({
           </div>
         </div>
         {/* Form */}
-        <div 
+        <div
           className="bg-[#FDF6EC] px-4 py-6 max-h-[80vh] overflow-y-auto"
           role="tabpanel"
           id={`${category.toLowerCase()}-panel`}
@@ -332,11 +334,17 @@ export default function AddTransactionModal({
           <form onSubmit={handleFormSubmit(onSubmit)} className="space-y-6">
             {/* Amount Input */}
             <div className="card-crumbs">
-              <label htmlFor="amount-input" className="block text-sm font-semibold text-[#4A3B32] mb-3">
+              <label
+                htmlFor="amount-input"
+                className="block text-sm font-semibold text-[#4A3B32] mb-3"
+              >
                 Amount (₱)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-[#4A3B32]/40" aria-hidden="true">
+                <span
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-[#4A3B32]/40"
+                  aria-hidden="true"
+                >
                   ₱
                 </span>
                 <input
@@ -355,7 +363,11 @@ export default function AddTransactionModal({
                 />
               </div>
               {errors.amount && (
-                <p id="amount-error" className="text-xs text-[#D9534F] mt-1" role="alert">
+                <p
+                  id="amount-error"
+                  className="text-xs text-[#D9534F] mt-1"
+                  role="alert"
+                >
                   {errors.amount.message}
                 </p>
               )}
@@ -364,7 +376,10 @@ export default function AddTransactionModal({
             {/* Category Selection (only for expenses) */}
             {category === "EXPENSE" && (
               <div className="card-crumbs relative">
-                <label htmlFor="category-selector" className="block text-sm font-semibold text-[#4A3B32] mb-3">
+                <label
+                  htmlFor="category-selector"
+                  className="block text-sm font-semibold text-[#4A3B32] mb-3"
+                >
                   Category
                 </label>
                 <button
@@ -375,8 +390,9 @@ export default function AddTransactionModal({
                   aria-expanded={showCategoryPopup}
                   aria-haspopup="true"
                   aria-controls="category-popup"
-                  aria-invalid={!!errors.selectedCategory}
-                  aria-describedby={errors.selectedCategory ? "category-error" : undefined}
+                  aria-describedby={
+                    errors.selectedCategory ? "category-error" : undefined
+                  }
                 >
                   <span className="font-semibold">
                     {selectedCategory || "Select category"}
@@ -415,20 +431,26 @@ export default function AddTransactionModal({
                     />
 
                     {/* Centered popup card */}
-                    <div 
+                    <div
                       className="fixed inset-0 flex items-center justify-center z-50 px-4 pointer-events-none animate-scale-in"
                       role="dialog"
                       aria-modal="true"
                       aria-labelledby="category-popup-title"
                     >
-                      <div 
+                      <div
                         id="category-popup"
                         className="w-full max-w-md bg-white rounded-xl shadow-2xl border-2 border-[#E6C288] overflow-hidden max-h-[70vh] flex flex-col pointer-events-auto"
                       >
                         {/* Tab Headers */}
-                        <div className="relative border-b-2 border-[#E6C288] flex-shrink-0">
-                          <h3 id="category-popup-title" className="sr-only">Select Category</h3>
-                          <div className="flex" role="tablist" aria-label="Category type">
+                        <div className="relative border-b-2 border-[#E6C288] shrink-0">
+                          <h3 id="category-popup-title" className="sr-only">
+                            Select Category
+                          </h3>
+                          <div
+                            className="flex"
+                            role="tablist"
+                            aria-label="Category type"
+                          >
                             {["NEEDS", "WANTS", "SAVINGS"].map((tab) => (
                               <button
                                 key={tab}
@@ -464,7 +486,7 @@ export default function AddTransactionModal({
                         </div>
 
                         {/* Tab Content - Subcategories */}
-                        <div 
+                        <div
                           className="overflow-y-auto flex-1"
                           role="tabpanel"
                           id={`${activeTab.toLowerCase()}-categories`}
@@ -531,7 +553,6 @@ export default function AddTransactionModal({
                                 {/* Category button */}
                                 <button
                                   type="button"
-                                  className="group relative"
                                   onClick={() => {
                                     if (isSwiped) {
                                       setSwipedCategory(null);
@@ -614,12 +635,11 @@ export default function AddTransactionModal({
                                       setTouchEnd(null);
                                     }
                                   }}
-                                  className={`w-full px-4 py-3 text-left hover:bg-[#FDF6EC] relative ${
-                                    selectedCategory === subcat
-                                      ? "bg-[#E6C288]/20 font-semibold"
-                                      : "bg-white"
-                                  }`}
-                                  title={isCustom ? "Swipe left to delete this custom category" : undefined}
+                                  title={
+                                    isCustom
+                                      ? "Swipe left to delete this custom category"
+                                      : undefined
+                                  }
                                   style={{
                                     transform: isSwiped
                                       ? "translateX(-80px)"
@@ -627,6 +647,11 @@ export default function AddTransactionModal({
                                     transition:
                                       "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                                   }}
+                                  className={`group relative w-full px-4 py-3 text-left hover:bg-[#FDF6EC] ${
+                                    selectedCategory === subcat
+                                      ? "bg-[#E6C288]/20 font-semibold"
+                                      : "bg-white"
+                                  }`}
                                 >
                                   <span className="text-sm text-[#4A3B32]">
                                     {subcat}
@@ -683,7 +708,7 @@ export default function AddTransactionModal({
                                         }));
                                       }
 
-                                      setSelectedCategory(newCategory);
+                                      setValue("selectedCategory", newCategory);
                                       setShowCategoryPopup(false);
                                       setShowCustomCategoryInput(false);
                                       setCustomCategory("");
@@ -713,7 +738,7 @@ export default function AddTransactionModal({
                                         }));
                                       }
 
-                                      setSelectedCategory(newCategory);
+                                      setValue("selectedCategory", newCategory);
                                       setShowCategoryPopup(false);
                                       setShowCustomCategoryInput(false);
                                       setCustomCategory("");
@@ -737,7 +762,10 @@ export default function AddTransactionModal({
 
             {/* Description (Optional) */}
             <div className="card-crumbs">
-              <label htmlFor="description-input" className="block text-sm font-semibold text-[#4A3B32] mb-3">
+              <label
+                htmlFor="description-input"
+                className="block text-sm font-semibold text-[#4A3B32] mb-3"
+              >
                 Description (Optional)
               </label>
               <input
@@ -750,10 +778,16 @@ export default function AddTransactionModal({
                   errors.description ? "border-[#D9534F]" : "border-[#E6C288]"
                 } focus:border-[#4A3B32] focus:outline-none`}
                 aria-invalid={!!errors.description}
-                aria-describedby={errors.description ? "description-error" : undefined}
+                aria-describedby={
+                  errors.description ? "description-error" : undefined
+                }
               />
               {errors.description && (
-                <p id="description-error" className="text-xs text-[#D9534F] mt-1" role="alert">
+                <p
+                  id="description-error"
+                  className="text-xs text-[#D9534F] mt-1"
+                  role="alert"
+                >
                   {errors.description.message}
                 </p>
               )}
@@ -835,7 +869,7 @@ export default function AddTransactionModal({
 
             {/* Error Messages */}
             {(errors.selectedCategory || errors.isRecurring) && (
-              <div 
+              <div
                 className="bg-[#D9534F]/10 border border-[#D9534F] text-[#D9534F] px-4 py-3 rounded-lg text-sm space-y-1"
                 role="alert"
                 aria-live="polite"

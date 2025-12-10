@@ -1,12 +1,9 @@
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 import { getDashboardData } from "./actions/user";
-import { Transaction } from "@/types";
 import CommunityTable from "@/components/CommunityTable";
 import BottomNav from "@/components/BottomNav";
 import MetricsGrid from "@/components/MetricsGrid";
 import RecurringTransactionsList from "@/components/RecurringTransactionsList";
-import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import Link from "next/link";
 import {
   HelpCircle,
@@ -70,21 +67,35 @@ export default async function DashboardPage() {
             <h1 className="text-2xl font-bold">Hi {user.username}!</h1>
             <p className="text-xs opacity-80 mt-1">Dashboard</p>
           </div>
-          <div className="flex items-center gap-3" role="toolbar" aria-label="Header actions">
-            <button 
+          <div
+            className="flex items-center gap-3"
+            role="toolbar"
+            aria-label="Header actions"
+          >
+            <button
               className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
               aria-label="Help and support"
               title="Help and support"
             >
-              <HelpCircle size={24} className="text-white" strokeWidth={2} aria-hidden="true" />
+              <HelpCircle
+                size={24}
+                className="text-white"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
             </button>
-            <button 
+            <button
               className="w-12 h-12 rounded-full bg-[#A8D5BA] hover:bg-[#A8D5BA]/90 flex items-center justify-center transition-all"
               aria-label="Notifications"
               title="Notifications"
               aria-pressed="false"
             >
-              <Bell size={24} className="text-white" strokeWidth={2} aria-hidden="true" />
+              <Bell
+                size={24}
+                className="text-white"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
             </button>
           </div>
         </div>
@@ -101,9 +112,14 @@ export default async function DashboardPage() {
         />
 
         {/* Recent Transactions */}
-        <section className="mt-6 px-4" aria-labelledby="recent-transactions-heading">
+        <section
+          className="mt-6 px-4"
+          aria-labelledby="recent-transactions-heading"
+        >
           <div className="flex items-center justify-between mb-4">
-            <h3 id="recent-transactions-heading" className="section-heading">Recent Transactions</h3>
+            <h3 id="recent-transactions-heading" className="section-heading">
+              Recent Transactions
+            </h3>
             <Link
               href="/analytics"
               className="text-xs text-[#4A3B32]/60 hover:text-[#4A3B32]"
@@ -113,8 +129,14 @@ export default async function DashboardPage() {
             </Link>
           </div>
           {recentTransactions.length === 0 ? (
-            <div className="card-crumbs text-center py-8" role="status" aria-live="polite">
-              <div className="text-5xl mb-3 animate-bounce" aria-hidden="true">🥐</div>
+            <div
+              className="card-crumbs text-center py-8"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="text-5xl mb-3 animate-bounce" aria-hidden="true">
+                🥐
+              </div>
               <p className="text-sm font-semibold text-[#4A3B32] mb-2">
                 Ready for your first crumb?
               </p>
@@ -130,7 +152,11 @@ export default async function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-2" role="list" aria-label="Recent transactions">
+            <div
+              className="space-y-2"
+              role="list"
+              aria-label="Recent transactions"
+            >
               {recentTransactions.slice(0, 5).map((transaction) => {
                 const getCategoryIcon = () => {
                   const categoryToCheck =
@@ -228,8 +254,16 @@ export default async function DashboardPage() {
         </section>
 
         {/* Recurring Transactions Section */}
-        <section className="mt-6 px-4" aria-labelledby="recurring-transactions-heading">
-          <h3 id="recurring-transactions-heading" className="section-heading mb-3">Recurring Transactions</h3>
+        <section
+          className="mt-6 px-4"
+          aria-labelledby="recurring-transactions-heading"
+        >
+          <h3
+            id="recurring-transactions-heading"
+            className="section-heading mb-3"
+          >
+            Recurring Transactions
+          </h3>
           {recurringTransactions.length === 0 ? (
             <div className="card-crumbs text-center py-6">
               <p className="text-sm text-[#4A3B32]/60">

@@ -27,9 +27,7 @@ export async function createRecurringTransaction(
     const nextOccurrence = calculateNextOccurrence(
       startDate,
       frequency,
-      interval,
-      dayOfWeek,
-      dayOfMonth
+      interval
     )
 
     const recurring = await prisma.recurringTransaction.create({
@@ -123,9 +121,7 @@ export async function deleteRecurringTransaction(id: string, userId: string) {
 function calculateNextOccurrence(
   current: Date,
   frequency: RecurringFrequency,
-  interval: number,
-  dayOfWeek?: number,
-  dayOfMonth?: number
+  interval: number
 ): Date {
   switch (frequency) {
     case 'DAILY':
