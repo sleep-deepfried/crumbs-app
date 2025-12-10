@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import InstallPrompt from "@/components/InstallPrompt";
 import { AddTransactionProvider } from "@/components/AddTransactionContext";
+import { ToastProvider } from "@/components/ToastContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,10 +50,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#FDF6EC]`}
       >
-        <AddTransactionProvider>
-          <InstallPrompt />
-          {children}
-        </AddTransactionProvider>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#4A3B32] focus:text-white focus:rounded-lg focus:font-semibold"
+        >
+          Skip to main content
+        </a>
+        <ToastProvider>
+          <AddTransactionProvider>
+            <InstallPrompt />
+            {children}
+          </AddTransactionProvider>
+        </ToastProvider>
       </body>
     </html>
   );

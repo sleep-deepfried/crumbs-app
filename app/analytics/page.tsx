@@ -33,7 +33,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-md mx-auto px-4 pt-6">
+      <main id="main-content" className="max-w-md mx-auto px-4 pt-6">
         {/* Income vs Expenses */}
         <div className="card-crumbs mb-6">
           <h2 className="section-heading mb-4">Income vs Expenses</h2>
@@ -140,7 +140,7 @@ export default async function AnalyticsPage() {
 
         {/* Bottom spacing */}
         <div className="h-8" />
-      </div>
+      </main>
 
       {/* Bottom Navigation */}
       <BottomNav />

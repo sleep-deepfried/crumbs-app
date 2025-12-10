@@ -85,7 +85,7 @@ export default function InstallPrompt() {
           </div>
           <button
             onClick={handleDismiss}
-            className="text-[#4A3B32]/40 hover:text-[#4A3B32] text-xl leading-none"
+            className="text-[#4A3B32]/70 hover:text-[#4A3B32] text-xl leading-none"
           >
             ×
           </button>

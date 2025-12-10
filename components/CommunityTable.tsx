@@ -18,7 +18,7 @@ export default function CommunityTable({ friends }: CommunityTableProps) {
         <h3 className="text-sm font-semibold text-[#4A3B32] mb-3">Café Regulars</h3>
         <div className="card-crumbs text-center py-6">
           <p className="text-sm text-[#4A3B32]/60">No friends yet</p>
-          <p className="text-xs text-[#4A3B32]/40 mt-1">
+          <p className="text-xs text-[#4A3B32]/70 mt-1">
             Add friends to see their budget status
           </p>
         </div>
@@ -26,29 +26,52 @@ export default function CommunityTable({ friends }: CommunityTableProps) {
     )
   }
 
+  const getMoodLabel = (mood: MoodState) => {
+    switch (mood) {
+      case 'SOGGY':
+        return 'Over budget'
+      case 'CRUMBLY':
+        return 'Low budget remaining'
+      case 'HARMONY':
+        return 'Budget healthy'
+      default:
+        return 'Budget status'
+    }
+  }
+
   return (
     <div className="px-4">
       <h3 className="text-sm font-semibold text-[#4A3B32] mb-3">Café Regulars</h3>
       
       {/* Horizontal scroll container */}
-      <div className="overflow-x-auto scroll-horizontal pb-2 -mx-4 px-4">
-        <div className="flex gap-4 min-w-min">
+      <div className="relative">
+        <div 
+          className="overflow-x-auto scroll-horizontal pb-2 -mx-4 px-4"
+          role="region"
+          aria-label="Friends list"
+          tabIndex={0}
+        >
+        <div className="flex gap-4 min-w-min" role="list">
           {friends.map((friend) => (
             <div
               key={friend.id}
               className="flex-shrink-0 w-20 flex flex-col items-center"
+              role="listitem"
             >
               {/* Avatar */}
               <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-[#E6C288] border-3 border-[#4A3B32] flex items-center justify-center overflow-hidden">
+                <div 
+                  className="w-16 h-16 rounded-full bg-[#E6C288] border-3 border-[#4A3B32] flex items-center justify-center overflow-hidden"
+                  aria-hidden="true"
+                >
                   {friend.avatarUrl ? (
                     <img
                       src={friend.avatarUrl}
-                      alt={friend.username}
+                      alt={`${friend.username}'s avatar`}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="text-2xl">👤</div>
+                    <div className="text-2xl" aria-hidden="true">👤</div>
                   )}
                 </div>
                 
@@ -61,10 +84,14 @@ export default function CommunityTable({ friends }: CommunityTableProps) {
                       ? 'bg-[#E6C288]'
                       : 'bg-[#A8D5BA]'
                   }`}
+                  aria-label={`${friend.username}: ${getMoodLabel(friend.crumbMood)}`}
+                  title={`${friend.username}: ${getMoodLabel(friend.crumbMood)}`}
                 >
-                  {friend.crumbMood === 'SOGGY' && '💦'}
-                  {friend.crumbMood === 'CRUMBLY' && '⚠️'}
-                  {friend.crumbMood === 'HARMONY' && '✨'}
+                  <span aria-hidden="true">
+                    {friend.crumbMood === 'SOGGY' && '💦'}
+                    {friend.crumbMood === 'CRUMBLY' && '⚠️'}
+                    {friend.crumbMood === 'HARMONY' && '✨'}
+                  </span>
                 </div>
               </div>
               
@@ -74,6 +101,11 @@ export default function CommunityTable({ friends }: CommunityTableProps) {
               </p>
             </div>
           ))}
+        </div>
+        </div>
+        {/* Scroll indicator */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-12 bg-gradient-to-l from-[#FDF6EC] to-transparent pointer-events-none flex items-center justify-end pr-2">
+          <div className="w-1 h-6 bg-[#E6C288]/40 rounded-full animate-pulse" />
         </div>
       </div>
     </div>

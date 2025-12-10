@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import prisma from '@/lib/prisma'
 import { getMonthStart, getMonthEnd } from '@/lib/utils'
 import { calculateMonthlyExpenses, calculateSafeToSpend } from '@/lib/gamification'
-import { MoodState, BrewLevel } from '@/types'
+import { MoodState, BrewLevel, TransactionType, TransactionCategory, RecurringFrequency } from '@/types'
 
 export async function getCurrentUser() {
   const supabase = await createClient()
@@ -95,8 +95,17 @@ export async function getDashboardData() {
     safeToSpend,
     monthlyExpenses,
     monthlyIncome,
-    recentTransactions: transactions.slice(0, 5),
-    recurringTransactions,
+    recentTransactions: transactions.slice(0, 5).map(t => ({
+      ...t,
+      type: t.type as TransactionType,
+      category: t.category as TransactionCategory,
+    })),
+    recurringTransactions: recurringTransactions.map(rt => ({
+      ...rt,
+      type: rt.type as TransactionType,
+      category: rt.category as TransactionCategory,
+      frequency: rt.frequency as RecurringFrequency,
+    })),
     friends,
   }
 }

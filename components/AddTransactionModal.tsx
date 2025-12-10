@@ -2,12 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { addTransaction } from "@/app/actions/transactions";
 import { getCurrentUser } from "@/app/actions/user";
 import { createRecurringTransaction } from "@/app/actions/recurring-transactions";
 import { TransactionCategory, RecurringFrequency } from "@/types";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { TrendingDown, TrendingUp, Trash2, RefreshCw } from "lucide-react";
+import {
+  transactionSchema,
+  type TransactionFormData,
+} from "@/lib/validations/transaction";
+import { useToast } from "@/components/ToastContext";
 
 interface AddTransactionModalProps {
   isOpen: boolean;
@@ -19,14 +26,41 @@ export default function AddTransactionModal({
   onClose,
 }: AddTransactionModalProps) {
   const router = useRouter();
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState<TransactionCategory>("EXPENSE");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const { showSuccess, showError } = useToast();
+
+  // React Hook Form with Zod validation
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<TransactionFormData>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: {
+      amount: "",
+      category: "EXPENSE",
+      selectedCategory: "",
+      description: "",
+      isRecurring: false,
+      frequency: "MONTHLY",
+      startDate: new Date().toISOString().split("T")[0],
+    },
+  });
+
+  // Watch form values
+  const category = watch("category");
+  const selectedCategory = watch("selectedCategory");
+  const isRecurring = watch("isRecurring");
+  const frequency = watch("frequency");
+  const amount = watch("amount");
+  const description = watch("description");
+
+  // UI state
   const [showCategoryPopup, setShowCategoryPopup] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("NEEDS");
-  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
   const [customCategory, setCustomCategory] = useState("");
   const [customSubcategories, setCustomSubcategories] = useState<{
@@ -37,11 +71,6 @@ export default function AddTransactionModal({
   const [swipedCategory, setSwipedCategory] = useState<string | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [frequency, setFrequency] = useState<RecurringFrequency>("MONTHLY");
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
 
   const baseSubcategories = {
     NEEDS: [
@@ -121,21 +150,14 @@ export default function AddTransactionModal({
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setAmount("");
-      setCategory("EXPENSE");
-      setSelectedCategory("");
+      reset();
       setShowCategoryPopup(false);
       setActiveTab("NEEDS");
-      setDescription("");
-      setError(null);
       setLoading(false);
       setShowCustomCategoryInput(false);
       setCustomCategory("");
-      setIsRecurring(false);
-      setFrequency("MONTHLY");
-      setStartDate(new Date().toISOString().split("T")[0]);
     }
-  }, [isOpen]);
+  }, [isOpen, reset]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -149,21 +171,21 @@ export default function AddTransactionModal({
     };
   }, [isOpen]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (!amount || parseFloat(amount) <= 0) {
-      setError("Please enter a valid amount");
-      return;
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
     }
+  }, [isOpen, onClose]);
 
-    if (category === "EXPENSE" && !selectedCategory) {
-      setError("Please select a category");
-      return;
-    }
-
+  async function onSubmit(data: TransactionFormData) {
     setLoading(true);
-    setError(null);
 
     try {
       // Get current user
@@ -174,52 +196,61 @@ export default function AddTransactionModal({
       }
 
       // All expenses deduct from their respective budgets
-      // Transferring to savings happens in the wallet section
       const isSavings = false;
 
-      if (isRecurring) {
+      if (data.isRecurring && data.frequency && data.startDate) {
         // Create recurring transaction
         const result = await createRecurringTransaction(
           user.id,
-          parseFloat(amount),
-          category,
-          frequency,
-          new Date(startDate),
-          description || undefined,
-          category === "EXPENSE" ? activeTab : undefined,
-          category === "EXPENSE" ? selectedCategory || undefined : undefined,
+          parseFloat(data.amount),
+          data.category,
+          data.frequency,
+          new Date(data.startDate),
+          data.description || undefined,
+          data.category === "EXPENSE" ? activeTab : undefined,
+          data.category === "EXPENSE"
+            ? data.selectedCategory || undefined
+            : undefined,
           isSavings,
           1 // interval
         );
         if (result.success) {
+          showSuccess(
+            `Recurring ${data.category.toLowerCase()} created successfully`
+          );
           onClose();
           router.refresh();
         } else {
-          setError(result.error || "Failed to create recurring transaction");
           setLoading(false);
+          showError(result.error || "Failed to create recurring transaction");
         }
       } else {
         // Create one-time transaction
         const result = await addTransaction(
           user.id,
-          parseFloat(amount),
-          category,
-          description || undefined,
+          parseFloat(data.amount),
+          data.category,
+          data.description || undefined,
           isSavings,
-          category === "EXPENSE" ? selectedCategory || undefined : undefined,
-          category === "EXPENSE" ? activeTab : undefined
+          data.category === "EXPENSE"
+            ? data.selectedCategory || undefined
+            : undefined,
+          data.category === "EXPENSE" ? activeTab : undefined
         );
         if (result.success) {
+          showSuccess(
+            `${data.category === "INCOME" ? "Income" : "Expense"} added successfully`
+          );
           onClose();
           router.refresh();
         } else {
-          setError(result.error || "Failed to add transaction");
           setLoading(false);
+          showError(result.error || "Failed to add transaction");
         }
       }
-    } catch {
-      setError("An unexpected error occurred");
+    } catch (error) {
       setLoading(false);
+      showError("An unexpected error occurred");
     }
   }
 
@@ -240,20 +271,27 @@ export default function AddTransactionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div 
+      className="modal-backdrop" 
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="transaction-modal-title"
+    >
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         {/* Header with Tabs */}
         <div className="bg-[#4A3B32] text-white rounded-t-3xl">
           {/* Category Tabs in Header */}
           <div className="relative px-4 pt-6">
-            <div className="flex">
+            <h2 id="transaction-modal-title" className="sr-only">Add Transaction</h2>
+            <div className="flex" role="tablist" aria-label="Transaction type">
               {(["EXPENSE", "INCOME"] as TransactionCategory[]).map((cat) => (
                 <button
                   key={cat}
                   type="button"
                   onClick={() => {
-                    setCategory(cat);
-                    setSelectedCategory("");
+                    setValue("category", cat);
+                    setValue("selectedCategory", "");
                     setShowCategoryPopup(false);
                     setActiveTab("NEEDS");
                   }}
@@ -262,6 +300,9 @@ export default function AddTransactionModal({
                       ? "text-white"
                       : "text-white/30 hover:text-white/60"
                   }`}
+                  role="tab"
+                  aria-selected={category === cat}
+                  aria-controls={`${cat.toLowerCase()}-panel`}
                 >
                   {getCategoryIcon(cat)}
                   <span className="text-base">{CATEGORY_LABELS[cat]}</span>
@@ -278,45 +319,64 @@ export default function AddTransactionModal({
                     ? "translateX(calc(100% + 2rem))"
                     : "translateX(0)",
               }}
+              aria-hidden="true"
             />
           </div>
-        </div>{" "}
+        </div>
         {/* Form */}
-        <div className="bg-[#FDF6EC] px-4 py-6 max-h-[80vh] overflow-y-auto">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div 
+          className="bg-[#FDF6EC] px-4 py-6 max-h-[80vh] overflow-y-auto"
+          role="tabpanel"
+          id={`${category.toLowerCase()}-panel`}
+        >
+          <form onSubmit={handleFormSubmit(onSubmit)} className="space-y-6">
             {/* Amount Input */}
             <div className="card-crumbs">
-              <label className="block text-sm font-semibold text-[#4A3B32] mb-3">
+              <label htmlFor="amount-input" className="block text-sm font-semibold text-[#4A3B32] mb-3">
                 Amount (₱)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-[#4A3B32]/40">
+                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-[#4A3B32]/40" aria-hidden="true">
                   ₱
                 </span>
                 <input
+                  id="amount-input"
                   type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  {...register("amount")}
                   placeholder="0"
                   step="0.01"
                   min="0"
-                  required
-                  className="w-full pl-12 pr-4 py-4 text-3xl font-bold text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 border-[#E6C288] focus:border-[#4A3B32] focus:outline-none"
+                  className={`w-full pl-12 pr-4 py-4 text-3xl font-bold text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 ${
+                    errors.amount ? "border-[#D9534F]" : "border-[#E6C288]"
+                  } focus:border-[#4A3B32] focus:outline-none`}
                   autoFocus
+                  aria-invalid={!!errors.amount}
+                  aria-describedby={errors.amount ? "amount-error" : undefined}
                 />
               </div>
+              {errors.amount && (
+                <p id="amount-error" className="text-xs text-[#D9534F] mt-1" role="alert">
+                  {errors.amount.message}
+                </p>
+              )}
             </div>
 
             {/* Category Selection (only for expenses) */}
             {category === "EXPENSE" && (
               <div className="card-crumbs relative">
-                <label className="block text-sm font-semibold text-[#4A3B32] mb-3">
+                <label htmlFor="category-selector" className="block text-sm font-semibold text-[#4A3B32] mb-3">
                   Category
                 </label>
                 <button
+                  id="category-selector"
                   type="button"
                   onClick={() => setShowCategoryPopup(!showCategoryPopup)}
                   className="w-full px-4 py-3 text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 border-[#E6C288] focus:border-[#4A3B32] focus:outline-none flex items-center justify-between hover:border-[#4A3B32] transition-colors"
+                  aria-expanded={showCategoryPopup}
+                  aria-haspopup="true"
+                  aria-controls="category-popup"
+                  aria-invalid={!!errors.selectedCategory}
+                  aria-describedby={errors.selectedCategory ? "category-error" : undefined}
                 >
                   <span className="font-semibold">
                     {selectedCategory || "Select category"}
@@ -328,6 +388,7 @@ export default function AddTransactionModal({
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -350,14 +411,24 @@ export default function AddTransactionModal({
                         setCustomCategory("");
                         setSwipedCategory(null);
                       }}
+                      aria-hidden="true"
                     />
 
                     {/* Centered popup card */}
-                    <div className="fixed inset-0 flex items-center justify-center z-50 px-4 pointer-events-none animate-scale-in">
-                      <div className="w-full max-w-md bg-white rounded-xl shadow-2xl border-2 border-[#E6C288] overflow-hidden max-h-[70vh] flex flex-col pointer-events-auto">
+                    <div 
+                      className="fixed inset-0 flex items-center justify-center z-50 px-4 pointer-events-none animate-scale-in"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="category-popup-title"
+                    >
+                      <div 
+                        id="category-popup"
+                        className="w-full max-w-md bg-white rounded-xl shadow-2xl border-2 border-[#E6C288] overflow-hidden max-h-[70vh] flex flex-col pointer-events-auto"
+                      >
                         {/* Tab Headers */}
                         <div className="relative border-b-2 border-[#E6C288] flex-shrink-0">
-                          <div className="flex">
+                          <h3 id="category-popup-title" className="sr-only">Select Category</h3>
+                          <div className="flex" role="tablist" aria-label="Category type">
                             {["NEEDS", "WANTS", "SAVINGS"].map((tab) => (
                               <button
                                 key={tab}
@@ -366,8 +437,11 @@ export default function AddTransactionModal({
                                 className={`flex-1 py-3 text-sm font-semibold transition-colors ${
                                   activeTab === tab
                                     ? "text-[#4A3B32]"
-                                    : "text-[#4A3B32]/40 hover:text-[#4A3B32]/70"
+                                    : "text-[#4A3B32]/70 hover:text-[#4A3B32]"
                                 }`}
+                                role="tab"
+                                aria-selected={activeTab === tab}
+                                aria-controls={`${tab.toLowerCase()}-categories`}
                               >
                                 {tab}
                               </button>
@@ -385,11 +459,16 @@ export default function AddTransactionModal({
                                   ? "translateX(200%)"
                                   : "translateX(0)",
                             }}
+                            aria-hidden="true"
                           />
                         </div>
 
                         {/* Tab Content - Subcategories */}
-                        <div className="overflow-y-auto flex-1">
+                        <div 
+                          className="overflow-y-auto flex-1"
+                          role="tabpanel"
+                          id={`${activeTab.toLowerCase()}-categories`}
+                        >
                           {subcategories[
                             activeTab as keyof typeof subcategories
                           ].map((subcat) => {
@@ -435,7 +514,7 @@ export default function AddTransactionModal({
                                         }));
                                         setSwipedCategory(null);
                                         if (selectedCategory === subcat) {
-                                          setSelectedCategory("");
+                                          setValue("selectedCategory", "");
                                         }
                                       }}
                                       className="p-2"
@@ -452,11 +531,12 @@ export default function AddTransactionModal({
                                 {/* Category button */}
                                 <button
                                   type="button"
+                                  className="group relative"
                                   onClick={() => {
                                     if (isSwiped) {
                                       setSwipedCategory(null);
                                     } else {
-                                      setSelectedCategory(subcat);
+                                      setValue("selectedCategory", subcat);
                                       setShowCategoryPopup(false);
                                       setShowCustomCategoryInput(false);
                                       setCustomCategory("");
@@ -539,6 +619,7 @@ export default function AddTransactionModal({
                                       ? "bg-[#E6C288]/20 font-semibold"
                                       : "bg-white"
                                   }`}
+                                  title={isCustom ? "Swipe left to delete this custom category" : undefined}
                                   style={{
                                     transform: isSwiped
                                       ? "translateX(-80px)"
@@ -656,17 +737,26 @@ export default function AddTransactionModal({
 
             {/* Description (Optional) */}
             <div className="card-crumbs">
-              <label className="block text-sm font-semibold text-[#4A3B32] mb-3">
+              <label htmlFor="description-input" className="block text-sm font-semibold text-[#4A3B32] mb-3">
                 Description (Optional)
               </label>
               <input
+                id="description-input"
                 type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                {...register("description")}
                 placeholder="e.g., Lunch at cafe"
                 maxLength={100}
-                className="w-full px-4 py-3 text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 border-[#E6C288] focus:border-[#4A3B32] focus:outline-none"
+                className={`w-full px-4 py-3 text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 ${
+                  errors.description ? "border-[#D9534F]" : "border-[#E6C288]"
+                } focus:border-[#4A3B32] focus:outline-none`}
+                aria-invalid={!!errors.description}
+                aria-describedby={errors.description ? "description-error" : undefined}
               />
+              {errors.description && (
+                <p id="description-error" className="text-xs text-[#D9534F] mt-1" role="alert">
+                  {errors.description.message}
+                </p>
+              )}
             </div>
 
             {/* Recurring Transaction Toggle */}
@@ -689,8 +779,7 @@ export default function AddTransactionModal({
                 </div>
                 <input
                   type="checkbox"
-                  checked={isRecurring}
-                  onChange={(e) => setIsRecurring(e.target.checked)}
+                  {...register("isRecurring")}
                   className="w-5 h-5 text-[#4A3B32] bg-[#FDF6EC] border-2 border-[#E6C288] rounded focus:ring-[#4A3B32] focus:ring-2"
                 />
               </label>
@@ -715,7 +804,7 @@ export default function AddTransactionModal({
                         <button
                           key={freq}
                           type="button"
-                          onClick={() => setFrequency(freq)}
+                          onClick={() => setValue("frequency", freq)}
                           className={`py-2 px-2 text-xs font-medium rounded-lg transition-all ${
                             frequency === freq
                               ? "bg-[#4A3B32] text-white"
@@ -735,8 +824,7 @@ export default function AddTransactionModal({
                     </label>
                     <input
                       type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+                      {...register("startDate")}
                       min={new Date().toISOString().split("T")[0]}
                       className="w-full px-3 py-2 text-sm text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 border-[#E6C288] focus:border-[#4A3B32] focus:outline-none"
                     />
@@ -745,20 +833,28 @@ export default function AddTransactionModal({
               )}
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-[#D9534F]/10 border border-[#D9534F] text-[#D9534F] px-4 py-3 rounded-lg text-sm">
-                {error}
+            {/* Error Messages */}
+            {(errors.selectedCategory || errors.isRecurring) && (
+              <div 
+                className="bg-[#D9534F]/10 border border-[#D9534F] text-[#D9534F] px-4 py-3 rounded-lg text-sm space-y-1"
+                role="alert"
+                aria-live="polite"
+              >
+                {errors.selectedCategory && (
+                  <p id="category-error">{errors.selectedCategory.message}</p>
+                )}
+                {errors.isRecurring && <p>{errors.isRecurring.message}</p>}
               </div>
             )}
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting || loading}
               className="w-full bg-[#4A3B32] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#4A3B32]/90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed btn-touch shadow-lg"
+              aria-busy={isSubmitting || loading}
             >
-              {loading
+              {isSubmitting || loading
                 ? "Adding..."
                 : isRecurring
                 ? "Create Recurring Transaction"

@@ -24,7 +24,7 @@ export default async function ProfilePage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-md mx-auto px-4 pt-6">
+      <main id="main-content" className="max-w-md mx-auto px-4 pt-6">
         {/* Mascot Display */}
         <div className="bg-linear-to-b from-[#8B7355] to-[#A0826D] rounded-2xl p-6 mb-6 shadow-lg">
           <MascotStage mood={user.crumbMood} brewLevel={user.brewLevel} />
@@ -93,21 +93,21 @@ export default async function ProfilePage() {
                 <Settings size={18} className="text-[#4A3B32]/60" strokeWidth={2} />
                 <span className="text-sm text-[#4A3B32]">Edit Profile</span>
               </div>
-              <ChevronRight size={18} className="text-[#4A3B32]/40" strokeWidth={2} />
+              <ChevronRight size={18} className="text-[#4A3B32]/70" strokeWidth={2} />
             </button>
             <button className="w-full flex items-center justify-between p-3 bg-[#FDF6EC] rounded-lg hover:bg-[#E6C288]/20 transition-colors">
               <div className="flex items-center gap-2">
                 <Bell size={18} className="text-[#4A3B32]/60" strokeWidth={2} />
                 <span className="text-sm text-[#4A3B32]">Notifications</span>
               </div>
-              <ChevronRight size={18} className="text-[#4A3B32]/40" strokeWidth={2} />
+              <ChevronRight size={18} className="text-[#4A3B32]/70" strokeWidth={2} />
             </button>
             <button className="w-full flex items-center justify-between p-3 bg-[#FDF6EC] rounded-lg hover:bg-[#E6C288]/20 transition-colors">
               <div className="flex items-center gap-2">
                 <Shield size={18} className="text-[#4A3B32]/60" strokeWidth={2} />
                 <span className="text-sm text-[#4A3B32]">Privacy</span>
               </div>
-              <ChevronRight size={18} className="text-[#4A3B32]/40" strokeWidth={2} />
+              <ChevronRight size={18} className="text-[#4A3B32]/70" strokeWidth={2} />
             </button>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default async function ProfilePage() {
 
         {/* Bottom spacing */}
         <div className="h-8" />
-      </div>
+      </main>
 
       {/* Bottom Navigation */}
       <BottomNav />

@@ -109,10 +109,10 @@ export default function FinancialCards({
           
           {/* Milestones */}
           <div className="mt-3 flex gap-2 text-[10px]">
-            <div className={`px-2 py-1 rounded ${totalSaved >= 50000 ? 'bg-[#A8D5BA] text-[#2C2416]' : 'bg-[#FDF6EC] text-[#4A3B32]/40'}`}>
+            <div className={`px-2 py-1 rounded ${totalSaved >= 50000 ? 'bg-[#A8D5BA] text-[#2C2416]' : 'bg-[#FDF6EC] text-[#4A3B32]/70'}`}>
               50k: Mug
             </div>
-            <div className={`px-2 py-1 rounded ${totalSaved >= 100000 ? 'bg-[#A8D5BA] text-[#2C2416]' : 'bg-[#FDF6EC] text-[#4A3B32]/40'}`}>
+            <div className={`px-2 py-1 rounded ${totalSaved >= 100000 ? 'bg-[#A8D5BA] text-[#2C2416]' : 'bg-[#FDF6EC] text-[#4A3B32]/70'}`}>
               100k: Press
             </div>
           </div>

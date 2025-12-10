@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { deleteRecurringTransaction } from "@/app/actions/recurring-transactions";
+import { useToast } from "@/components/ToastContext";
 
 interface RecurringTransaction {
   id: string;
@@ -24,26 +25,31 @@ export default function RecurringTransactionsList({
   userId,
 }: RecurringTransactionsListProps) {
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
   const [swipedId, setSwipedId] = useState<string | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
+    const transaction = transactions.find((t) => t.id === id);
     setDeleting(id);
     const result = await deleteRecurringTransaction(id, userId);
     if (result.success) {
+      showSuccess(
+        `Deleted recurring transaction: ${transaction?.subcategory || transaction?.category || "transaction"}`
+      );
       router.refresh();
     } else {
       setDeleting(null);
-      alert("Failed to delete recurring transaction");
+      showError("Failed to delete recurring transaction");
     }
   };
 
   return (
     <>
       {/* Calendar */}
-      <div className="mb-6">
-        <div className="grid grid-cols-7 gap-2 mb-4">
+      <div className="mb-6" role="region" aria-label="Recurring transactions calendar">
+        <div className="grid grid-cols-7 gap-2 mb-4" role="grid" aria-label="Calendar">
           {(() => {
             const today = new Date();
             const year = today.getFullYear();
@@ -74,8 +80,10 @@ export default function RecurringTransactionsList({
                       ? "bg-[#F8B4B4] text-white"
                       : isToday
                       ? "bg-[#4A3B32] text-white"
-                      : "text-[#4A3B32]/40"
+                      : "text-[#4A3B32]/70"
                   }`}
+                  role="gridcell"
+                  aria-label={isToday ? `Today, ${day}` : hasRecurring ? `Day ${day} with recurring transaction` : `Day ${day}`}
                 >
                   {day}
                 </div>
@@ -88,7 +96,7 @@ export default function RecurringTransactionsList({
       </div>
 
       {/* Subscription Cards */}
-      <div className="space-y-3">
+      <div className="space-y-3" role="list" aria-label="Recurring transactions">
         {transactions.map((recurring) => {
           const nextDate = new Date(recurring.nextOccurrence);
           const day = nextDate.getDate();
@@ -101,6 +109,7 @@ export default function RecurringTransactionsList({
             <div
               key={recurring.id}
               className="relative overflow-hidden rounded-2xl"
+              role="listitem"
             >
               {/* Delete button (revealed on swipe) */}
               <div className="absolute inset-y-0 right-0 flex items-center justify-center bg-[#D9534F] w-20 rounded-r-2xl">
@@ -109,16 +118,32 @@ export default function RecurringTransactionsList({
                   onClick={() => handleDelete(recurring.id)}
                   disabled={isDeleting}
                   className="p-2"
+                  aria-label={`Delete recurring transaction: ${recurring.subcategory || recurring.category}`}
+                  title={`Delete ${recurring.subcategory || recurring.category}`}
                 >
-                  <Trash2 size={20} className="text-white" strokeWidth={2} />
+                  <Trash2 size={20} className="text-white" strokeWidth={2} aria-hidden="true" />
                 </button>
               </div>
 
               {/* Subscription card */}
               <div
-                className="bg-[#FDF6EC] rounded-2xl p-4 flex items-center justify-between relative transition-transform duration-300 ease-out"
+                className="bg-[#FDF6EC] rounded-2xl p-4 flex items-center justify-between relative transition-transform duration-300 ease-out group"
                 style={{
                   transform: isSwiped ? "translateX(-80px)" : "translateX(0)",
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Recurring transaction: ${recurring.subcategory || recurring.category}, ${recurring.amount} ${recurring.frequency.toLowerCase()}, swipe left to delete`}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowLeft' && !isSwiped) {
+                    setSwipedId(recurring.id)
+                  } else if (e.key === 'ArrowRight' && isSwiped) {
+                    setSwipedId(null)
+                  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                    if (isSwiped) {
+                      handleDelete(recurring.id)
+                    }
+                  }
                 }}
                 onTouchStart={(e) => {
                   setTouchStart(e.touches[0].clientX);
@@ -178,7 +203,7 @@ export default function RecurringTransactionsList({
                       {(recurring.subcategory || recurring.category).charAt(0)}
                     </span>
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-lg font-bold text-[#4A3B32]">
                       {recurring.subcategory || recurring.category}
                     </p>
@@ -188,11 +213,16 @@ export default function RecurringTransactionsList({
                       {recurring.frequency.charAt(0) +
                         recurring.frequency.slice(1).toLowerCase()}
                     </p>
+                    {!isSwiped && (
+                      <p className="text-xs text-[#4A3B32]/50 mt-1 group-hover:text-[#4A3B32]/70 transition-colors">
+                        ← Swipe to delete
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="bg-[#F8B4B4] px-4 py-2 rounded-xl">
                   <p className="text-lg font-bold text-white">
-                    ${recurring.amount.toFixed(2)}
+                    ₱{recurring.amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
               </div>

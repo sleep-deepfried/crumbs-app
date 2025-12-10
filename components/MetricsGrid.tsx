@@ -41,7 +41,7 @@ export default function MetricsGrid({
 
   return (
     <div className="px-4 mb-6">
-      <h2 className="section-heading mb-4">This Month:</h2>
+      <h2 className="section-heading my-4">This Month:</h2>
       <div className="grid grid-cols-2 gap-4">
         {/* Total Spending */}
         <div className="metric-card">
@@ -84,7 +84,7 @@ export default function MetricsGrid({
               </p>
             </>
           ) : (
-            <p className="text-xl font-bold text-[#4A3B32]/40">—</p>
+            <p className="text-xl font-bold text-[#4A3B32]/70">—</p>
           )}
         </div>
 

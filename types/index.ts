@@ -76,6 +76,7 @@ export interface DashboardData {
   monthlyExpenses: number
   monthlyIncome: number
   recentTransactions: Transaction[]
+  recurringTransactions: RecurringTransaction[]
   friends: Array<{
     id: string
     username: string

@@ -7,7 +7,7 @@ export default function OfflinePage() {
         <p className="text-sm text-[#4A3B32]/60 mb-6">
           It looks like you've lost your internet connection. Don't worry, your data is safe!
         </p>
-        <p className="text-xs text-[#4A3B32]/40">
+        <p className="text-xs text-[#4A3B32]/70">
           Reconnect to continue tracking your spending with CRUMBS.
         </p>
       </div>

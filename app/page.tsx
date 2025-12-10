@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getDashboardData } from "./actions/user";
 import { Transaction } from "@/types";
 import CommunityTable from "@/components/CommunityTable";
 import BottomNav from "@/components/BottomNav";
 import MetricsGrid from "@/components/MetricsGrid";
 import RecurringTransactionsList from "@/components/RecurringTransactionsList";
+import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import Link from "next/link";
 import {
   HelpCircle,
@@ -61,23 +63,35 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#FDF6EC] pb-24">
-      {/* New Header */}
-      <div className="bg-[#FDF6EC] px-4 py-6 flex items-center justify-between">
-        <div>
-          <h1 className="greeting-text">Hi {user.username}!</h1>
+      {/* Header */}
+      <header className="bg-[#4A3B32] text-white px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Hi {user.username}!</h1>
+            <p className="text-xs opacity-80 mt-1">Dashboard</p>
+          </div>
+          <div className="flex items-center gap-3" role="toolbar" aria-label="Header actions">
+            <button 
+              className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+              aria-label="Help and support"
+              title="Help and support"
+            >
+              <HelpCircle size={24} className="text-white" strokeWidth={2} aria-hidden="true" />
+            </button>
+            <button 
+              className="w-12 h-12 rounded-full bg-[#A8D5BA] hover:bg-[#A8D5BA]/90 flex items-center justify-center transition-all"
+              aria-label="Notifications"
+              title="Notifications"
+              aria-pressed="false"
+            >
+              <Bell size={24} className="text-white" strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all border border-[#E6C288]/30">
-            <HelpCircle size={24} className="text-[#D9534F]" strokeWidth={2} />
-          </button>
-          <button className="w-12 h-12 rounded-full bg-[#A8D5BA] flex items-center justify-center shadow-sm hover:shadow-md transition-all">
-            <Bell size={24} className="text-white" strokeWidth={2} />
-          </button>
-        </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="max-w-md mx-auto">
+      <main id="main-content" className="max-w-md mx-auto px-0 sm:px-4">
         {/* Metrics Grid */}
         <MetricsGrid
           totalSpending={monthlyExpenses}
@@ -87,19 +101,20 @@ export default async function DashboardPage() {
         />
 
         {/* Recent Transactions */}
-        <div className="mt-6 px-4">
+        <section className="mt-6 px-4" aria-labelledby="recent-transactions-heading">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading">Recent Transactions</h3>
+            <h3 id="recent-transactions-heading" className="section-heading">Recent Transactions</h3>
             <Link
               href="/analytics"
               className="text-xs text-[#4A3B32]/60 hover:text-[#4A3B32]"
+              aria-label="View all transactions in analytics"
             >
               View All
             </Link>
           </div>
           {recentTransactions.length === 0 ? (
-            <div className="card-crumbs text-center py-8">
-              <div className="text-5xl mb-3 animate-bounce">🥐</div>
+            <div className="card-crumbs text-center py-8" role="status" aria-live="polite">
+              <div className="text-5xl mb-3 animate-bounce" aria-hidden="true">🥐</div>
               <p className="text-sm font-semibold text-[#4A3B32] mb-2">
                 Ready for your first crumb?
               </p>
@@ -109,117 +124,118 @@ export default async function DashboardPage() {
               <Link
                 href="/add"
                 className="inline-block bg-[#4A3B32] text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-[#4A3B32]/90 active:scale-95 transition-all shadow-lg"
+                aria-label="Add your first transaction"
               >
-                ✨ Add First Transaction
+                <span aria-hidden="true">✨</span> Add First Transaction
               </Link>
             </div>
           ) : (
-            <div className="space-y-2">
-              {recentTransactions
-                .slice(0, 5)
-                .map((transaction: Transaction) => {
-                  const getCategoryIcon = () => {
-                    const categoryToCheck =
-                      transaction.type === "EXPENSE"
-                        ? transaction.mainCategory
-                        : transaction.category;
-                    switch (categoryToCheck) {
-                      case "NEEDS":
-                        return (
-                          <Home
-                            size={20}
-                            className="text-[#4A3B32]"
-                            strokeWidth={2}
-                          />
-                        );
-                      case "WANTS":
-                        return (
-                          <ShoppingCart
-                            size={20}
-                            className="text-[#4A3B32]"
-                            strokeWidth={2}
-                          />
-                        );
-                      case "SAVINGS":
-                        return (
-                          <TrendingUp
-                            size={20}
-                            className="text-[#A8D5BA]"
-                            strokeWidth={2}
-                          />
-                        );
-                      case "INCOME":
-                        return (
-                          <DollarSign
-                            size={20}
-                            className="text-[#A8D5BA]"
-                            strokeWidth={2}
-                          />
-                        );
-                      default:
-                        return null;
-                    }
-                  };
+            <div className="space-y-2" role="list" aria-label="Recent transactions">
+              {recentTransactions.slice(0, 5).map((transaction) => {
+                const getCategoryIcon = () => {
+                  const categoryToCheck =
+                    transaction.type === "EXPENSE"
+                      ? transaction.mainCategory
+                      : transaction.category;
+                  switch (categoryToCheck) {
+                    case "NEEDS":
+                      return (
+                        <Home
+                          size={20}
+                          className="text-[#4A3B32]"
+                          strokeWidth={2}
+                        />
+                      );
+                    case "WANTS":
+                      return (
+                        <ShoppingCart
+                          size={20}
+                          className="text-[#4A3B32]"
+                          strokeWidth={2}
+                        />
+                      );
+                    case "SAVINGS":
+                      return (
+                        <TrendingUp
+                          size={20}
+                          className="text-[#A8D5BA]"
+                          strokeWidth={2}
+                        />
+                      );
+                    case "INCOME":
+                      return (
+                        <DollarSign
+                          size={20}
+                          className="text-[#A8D5BA]"
+                          strokeWidth={2}
+                        />
+                      );
+                    default:
+                      return null;
+                  }
+                };
 
-                  return (
-                    <div
-                      key={transaction.id}
-                      className="bg-white rounded-xl p-3 border border-[#E6C288]/30 flex items-center justify-between hover:border-[#E6C288] transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            transaction.type === "INCOME"
-                              ? "bg-[#A8D5BA]/20"
-                              : "bg-[#E6C288]/20"
-                          }`}
-                        >
-                          {getCategoryIcon()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#4A3B32]">
-                            {transaction.type === "EXPENSE" &&
-                            transaction.subcategory
-                              ? transaction.subcategory
-                              : transaction.category.charAt(0) +
-                                transaction.category.slice(1).toLowerCase()}
-                          </p>
-                          {transaction.description && (
-                            <p className="text-xs text-[#4A3B32]/60">
-                              {transaction.description}
-                            </p>
-                          )}
-                          <p className="text-[10px] text-[#4A3B32]/40">
-                            {new Date(transaction.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <p
-                        className={`text-lg font-bold ${
+                return (
+                  <div
+                    key={transaction.id}
+                    className="bg-white rounded-xl p-3 border border-[#E6C288]/30 flex items-center justify-between hover:border-[#E6C288] transition-colors"
+                    role="listitem"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
                           transaction.type === "INCOME"
-                            ? "text-[#A8D5BA]"
-                            : "text-[#4A3B32]"
+                            ? "bg-[#A8D5BA]/20"
+                            : "bg-[#E6C288]/20"
                         }`}
+                        aria-hidden="true"
                       >
-                        {transaction.type === "INCOME" ? "+" : "-"}₱
-                        {transaction.amount.toLocaleString()}
-                      </p>
+                        {getCategoryIcon()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-[#4A3B32]">
+                          {transaction.type === "EXPENSE" &&
+                          transaction.subcategory
+                            ? transaction.subcategory
+                            : transaction.category.charAt(0) +
+                              transaction.category.slice(1).toLowerCase()}
+                        </p>
+                        {transaction.description && (
+                          <p className="text-xs text-[#4A3B32]/60">
+                            {transaction.description}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-[#4A3B32]/70">
+                          {new Date(transaction.date).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                  );
-                })}
+                    <p
+                      className={`text-lg font-bold ${
+                        transaction.type === "INCOME"
+                          ? "text-[#A8D5BA]"
+                          : "text-[#4A3B32]"
+                      }`}
+                    >
+                      {transaction.type === "INCOME" ? "+" : "-"}₱
+                      {transaction.amount.toLocaleString()}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Recurring Transactions Section */}
-        <div className="mt-6 px-4">
-          <h3 className="section-heading mb-3">Recurring Transactions</h3>
+        <section className="mt-6 px-4" aria-labelledby="recurring-transactions-heading">
+          <h3 id="recurring-transactions-heading" className="section-heading mb-3">Recurring Transactions</h3>
           {recurringTransactions.length === 0 ? (
             <div className="card-crumbs text-center py-6">
               <p className="text-sm text-[#4A3B32]/60">
                 No recurring transactions yet
               </p>
-              <p className="text-xs text-[#4A3B32]/40 mt-1">
+              <p className="text-xs text-[#4A3B32]/70 mt-1">
                 Set up recurring expenses to track subscriptions
               </p>
             </div>
@@ -231,16 +247,16 @@ export default async function DashboardPage() {
               />
             </div>
           )}
-        </div>
+        </section>
 
         {/* Community Table - Friends */}
-        <div className="mt-6">
+        <section className="mt-6" aria-labelledby="community-heading">
           <CommunityTable friends={friends} />
-        </div>
+        </section>
 
         {/* Bottom spacing for nav */}
         <div className="h-8" />
-      </div>
+      </main>
 
       {/* Bottom Navigation */}
       <BottomNav />
