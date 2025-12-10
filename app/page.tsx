@@ -1,42 +1,62 @@
-import { redirect } from 'next/navigation'
-import { getDashboardData } from './actions/user'
-import CommunityTable from '@/components/CommunityTable'
-import BottomNav from '@/components/BottomNav'
-import MetricsGrid from '@/components/MetricsGrid'
-import Link from 'next/link'
-import { HelpCircle, Bell, Home, ShoppingCart, TrendingUp, DollarSign } from 'lucide-react'
+import { redirect } from "next/navigation";
+import { getDashboardData } from "./actions/user";
+import { Transaction } from "@/types";
+import CommunityTable from "@/components/CommunityTable";
+import BottomNav from "@/components/BottomNav";
+import MetricsGrid from "@/components/MetricsGrid";
+import RecurringTransactionsList from "@/components/RecurringTransactionsList";
+import Link from "next/link";
+import {
+  HelpCircle,
+  Bell,
+  Home,
+  ShoppingCart,
+  TrendingUp,
+  DollarSign,
+} from "lucide-react";
 
 export default async function DashboardPage() {
-  const data = await getDashboardData()
+  const data = await getDashboardData();
 
   if (!data) {
-    redirect('/auth/login')
+    redirect("/auth/login");
   }
 
-  const { user, monthlyExpenses, friends, recentTransactions } = data
+  const {
+    user,
+    monthlyExpenses,
+    monthlyIncome,
+    friends,
+    recentTransactions,
+    recurringTransactions,
+  } = data;
 
   // Calculate monthly change (mock for now - you can add actual last month data later)
-  const lastMonthExpenses = 0 // TODO: Implement last month calculation
-  const monthlyChange = lastMonthExpenses > 0 
-    ? ((monthlyExpenses - lastMonthExpenses) / lastMonthExpenses) * 100
-    : 0
+  const lastMonthExpenses = 0; // TODO: Implement last month calculation
+  const monthlyChange =
+    lastMonthExpenses > 0
+      ? ((monthlyExpenses - lastMonthExpenses) / lastMonthExpenses) * 100
+      : 0;
 
   // Find largest expense
-  const expenseTransactions = recentTransactions.filter((t: { type: string; amount: number; category: string }) => t.type === 'EXPENSE')
-  let largestExpense: { category: string; amount: number } | null = null
-  
+  const expenseTransactions = recentTransactions.filter(
+    (t: { type: string; amount: number; category: string }) =>
+      t.type === "EXPENSE"
+  );
+  let largestExpense: { category: string; amount: number } | null = null;
+
   if (expenseTransactions.length > 0) {
-    let maxAmount = 0
-    let maxCategory = ''
-    
+    let maxAmount = 0;
+    let maxCategory = "";
+
     expenseTransactions.forEach((t: { amount: number; category: string }) => {
       if (t.amount > maxAmount) {
-        maxAmount = t.amount
-        maxCategory = t.category
+        maxAmount = t.amount;
+        maxCategory = t.category;
       }
-    })
-    
-    largestExpense = { category: maxCategory, amount: maxAmount }
+    });
+
+    largestExpense = { category: maxCategory, amount: maxAmount };
   }
 
   return (
@@ -63,14 +83,17 @@ export default async function DashboardPage() {
           totalSpending={monthlyExpenses}
           monthlyChange={monthlyChange}
           largestExpense={largestExpense}
-          totalIncome={user.monthlyIncome}
+          totalIncome={monthlyIncome}
         />
 
         {/* Recent Transactions */}
         <div className="mt-6 px-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading">Recent Transactions</h3>
-            <Link href="/analytics" className="text-xs text-[#4A3B32]/60 hover:text-[#4A3B32]">
+            <Link
+              href="/analytics"
+              className="text-xs text-[#4A3B32]/60 hover:text-[#4A3B32]"
+            >
               View All
             </Link>
           </div>
@@ -92,64 +115,98 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {recentTransactions.slice(0, 5).map((transaction: { id: string; type: string; category: string; description: string | null; date: Date; amount: number }) => {
-                const getCategoryIcon = () => {
-                  switch (transaction.category) {
-                    case 'NEEDS':
-                      return <Home size={20} className="text-[#4A3B32]" strokeWidth={2} />
-                    case 'WANTS':
-                      return <ShoppingCart size={20} className="text-[#4A3B32]" strokeWidth={2} />
-                    case 'SAVINGS':
-                      return <TrendingUp size={20} className="text-[#A8D5BA]" strokeWidth={2} />
-                    case 'INCOME':
-                      return <DollarSign size={20} className="text-[#A8D5BA]" strokeWidth={2} />
-                    default:
-                      return null
-                  }
-                }
+              {recentTransactions
+                .slice(0, 5)
+                .map((transaction: Transaction) => {
+                  const getCategoryIcon = () => {
+                    const categoryToCheck =
+                      transaction.type === "EXPENSE"
+                        ? transaction.mainCategory
+                        : transaction.category;
+                    switch (categoryToCheck) {
+                      case "NEEDS":
+                        return (
+                          <Home
+                            size={20}
+                            className="text-[#4A3B32]"
+                            strokeWidth={2}
+                          />
+                        );
+                      case "WANTS":
+                        return (
+                          <ShoppingCart
+                            size={20}
+                            className="text-[#4A3B32]"
+                            strokeWidth={2}
+                          />
+                        );
+                      case "SAVINGS":
+                        return (
+                          <TrendingUp
+                            size={20}
+                            className="text-[#A8D5BA]"
+                            strokeWidth={2}
+                          />
+                        );
+                      case "INCOME":
+                        return (
+                          <DollarSign
+                            size={20}
+                            className="text-[#A8D5BA]"
+                            strokeWidth={2}
+                          />
+                        );
+                      default:
+                        return null;
+                    }
+                  };
 
-                return (
-                  <div
-                    key={transaction.id}
-                    className="bg-white rounded-xl p-3 border border-[#E6C288]/30 flex items-center justify-between hover:border-[#E6C288] transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          transaction.type === 'INCOME'
-                            ? 'bg-[#A8D5BA]/20'
-                            : 'bg-[#E6C288]/20'
+                  return (
+                    <div
+                      key={transaction.id}
+                      className="bg-white rounded-xl p-3 border border-[#E6C288]/30 flex items-center justify-between hover:border-[#E6C288] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            transaction.type === "INCOME"
+                              ? "bg-[#A8D5BA]/20"
+                              : "bg-[#E6C288]/20"
+                          }`}
+                        >
+                          {getCategoryIcon()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#4A3B32]">
+                            {transaction.type === "EXPENSE" &&
+                            transaction.subcategory
+                              ? transaction.subcategory
+                              : transaction.category.charAt(0) +
+                                transaction.category.slice(1).toLowerCase()}
+                          </p>
+                          {transaction.description && (
+                            <p className="text-xs text-[#4A3B32]/60">
+                              {transaction.description}
+                            </p>
+                          )}
+                          <p className="text-[10px] text-[#4A3B32]/40">
+                            {new Date(transaction.date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <p
+                        className={`text-lg font-bold ${
+                          transaction.type === "INCOME"
+                            ? "text-[#A8D5BA]"
+                            : "text-[#4A3B32]"
                         }`}
                       >
-                        {getCategoryIcon()}
-                      </div>
-                    <div>
-                      <p className="text-sm font-medium text-[#4A3B32]">
-                        {transaction.category}
-                      </p>
-                      {transaction.description && (
-                        <p className="text-xs text-[#4A3B32]/60">
-                          {transaction.description}
-                        </p>
-                      )}
-                      <p className="text-[10px] text-[#4A3B32]/40">
-                        {new Date(transaction.date).toLocaleDateString()}
+                        {transaction.type === "INCOME" ? "+" : "-"}₱
+                        {transaction.amount.toLocaleString()}
                       </p>
                     </div>
-                  </div>
-                  <p
-                    className={`text-lg font-bold ${
-                      transaction.type === 'INCOME'
-                        ? 'text-[#A8D5BA]'
-                        : 'text-[#4A3B32]'
-                    }`}
-                  >
-                    {transaction.type === 'INCOME' ? '+' : '-'}₱
-                    {transaction.amount.toLocaleString()}
-                  </p>
-                </div>
-              )
-              })}
+                  );
+                })}
             </div>
           )}
         </div>
@@ -157,12 +214,23 @@ export default async function DashboardPage() {
         {/* Recurring Transactions Section */}
         <div className="mt-6 px-4">
           <h3 className="section-heading mb-3">Recurring Transactions</h3>
-          <div className="card-crumbs text-center py-6">
-            <p className="text-sm text-[#4A3B32]/60">No recurring transactions yet</p>
-            <p className="text-xs text-[#4A3B32]/40 mt-1">
-              Set up recurring expenses to track subscriptions
-            </p>
-          </div>
+          {recurringTransactions.length === 0 ? (
+            <div className="card-crumbs text-center py-6">
+              <p className="text-sm text-[#4A3B32]/60">
+                No recurring transactions yet
+              </p>
+              <p className="text-xs text-[#4A3B32]/40 mt-1">
+                Set up recurring expenses to track subscriptions
+              </p>
+            </div>
+          ) : (
+            <div className="card-crumbs p-6">
+              <RecurringTransactionsList
+                transactions={recurringTransactions}
+                userId={user.id}
+              />
+            </div>
+          )}
         </div>
 
         {/* Community Table - Friends */}
@@ -177,5 +245,5 @@ export default async function DashboardPage() {
       {/* Bottom Navigation */}
       <BottomNav />
     </div>
-  )
+  );
 }

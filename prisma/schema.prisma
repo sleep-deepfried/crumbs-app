@@ -18,7 +18,6 @@ model User {
   avatarUrl      String?
   
   // Financial Targets
-  monthlyIncome  Float    @default(69500)
   spendingLimit  Float    @default(39500)
   totalSaved     Float    @default(0) // Affects Brew's vessel type
   
@@ -27,9 +26,10 @@ model User {
   crumbMood      String   @default("HARMONY") // HARMONY, CRUMBLY, SOGGY
   brewLevel      Int      @default(1) // 1=Glass, 2=Mug, 3=Press
   
-  transactions   Transaction[]
-  friends        Friendship[]  @relation("UserFriends")
-  friendOf       Friendship[]  @relation("FriendUsers")
+  transactions           Transaction[]
+  recurringTransactions  RecurringTransaction[]
+  friends                Friendship[]  @relation("UserFriends")
+  friendOf               Friendship[]  @relation("FriendUsers")
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -49,16 +49,52 @@ model Friendship {
 }
 
 model Transaction {
-  id          String   @id @default(uuid())
-  userId      String
-  amount      Float
-  type        String   // "EXPENSE" or "INCOME"
-  category    String   // NEEDS, WANTS, SAVINGS, INCOME
-  description String?
-  date        DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  amount       Float
+  type         String   // "EXPENSE" or "INCOME"
+  category     String   // "EXPENSE" or "INCOME"
+  mainCategory String?  // "NEEDS", "WANTS", "SAVINGS"
+  subcategory  String?  // "Groceries", "Rent", "Entertainment", custom categories, etc.
+  isSavings    Boolean  @default(false) // Mark expense as savings for BREW level
+  description  String?
+  date         DateTime @default(now())
   
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
   @@index([date])
+}
+
+model RecurringTransaction {
+  id            String   @id @default(uuid())
+  userId        String
+  amount        Float
+  type          String   // "EXPENSE" or "INCOME"
+  category      String
+  mainCategory  String?
+  subcategory   String?
+  isSavings     Boolean  @default(false)
+  description   String?
+  
+  // Recurrence settings
+  frequency     String   // "DAILY", "WEEKLY", "MONTHLY", "YEARLY"
+  interval      Int      @default(1) // Every X days/weeks/months
+  dayOfWeek     Int?     // 0-6 for weekly (0=Sunday)
+  dayOfMonth    Int?     // 1-31 for monthly
+  startDate     DateTime
+  endDate       DateTime? // null = indefinite
+  
+  // Tracking
+  nextOccurrence DateTime
+  lastProcessed  DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([nextOccurrence])
+  @@index([isActive])
 }

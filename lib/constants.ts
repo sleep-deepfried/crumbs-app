@@ -22,24 +22,18 @@ export const BREW_LEVEL_NAMES = {
 
 // Transaction categories
 export const TRANSACTION_CATEGORIES: TransactionCategory[] = [
-  'NEEDS',
-  'WANTS',
-  'SAVINGS',
+  'EXPENSE',
   'INCOME',
 ]
 
 export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
-  NEEDS: '🏠 Needs',
-  WANTS: '🎮 Wants',
-  SAVINGS: '💰 Savings',
-  INCOME: '💵 Income',
+  EXPENSE: 'Expense',
+  INCOME: 'Income',
 }
 
 export const CATEGORY_DESCRIPTIONS: Record<TransactionCategory, string> = {
-  NEEDS: 'Essential expenses (rent, food, utilities)',
-  WANTS: 'Non-essential spending (entertainment, dining)',
-  SAVINGS: 'Money set aside for future goals',
-  INCOME: 'Money coming in (salary, bonus, side gig)',
+  EXPENSE: 'Money going out',
+  INCOME: 'Money coming in',
 }
 
 // Color palette

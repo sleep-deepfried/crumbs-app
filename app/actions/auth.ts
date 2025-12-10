@@ -60,7 +60,6 @@ export async function signup(formData: FormData) {
         id: authData.user.id,
         email,
         username,
-        monthlyIncome: 69500,
         spendingLimit: 39500,
         totalSaved: 0,
         currentStreak: 0,

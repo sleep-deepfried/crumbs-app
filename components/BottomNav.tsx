@@ -3,9 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Wallet, Plus, BarChart3, User } from 'lucide-react'
+import { useAddTransaction } from './AddTransactionContext'
+import AddTransactionModal from './AddTransactionModal'
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const { isOpen, openModal, closeModal } = useAddTransaction()
 
   const navItems = [
     {
@@ -46,15 +49,15 @@ export default function BottomNav() {
             
             if (item.isCenter) {
               return (
-                <Link
+                <button
                   key={item.name}
-                  href={item.href}
+                  onClick={openModal}
                   className="flex flex-col items-center justify-center -mt-8"
                 >
                   <div className="w-16 h-16 bg-[#4A3B32] rounded-full flex items-center justify-center shadow-lg hover:bg-[#4A3B32]/90 active:scale-95 transition-all border-4 border-white">
                     <Icon size={28} className="text-white" strokeWidth={2} />
                   </div>
-                </Link>
+                </button>
               )
             }
 
@@ -88,6 +91,9 @@ export default function BottomNav() {
           })}
         </div>
       </div>
+      
+      {/* Modal */}
+      <AddTransactionModal isOpen={isOpen} onClose={closeModal} />
     </nav>
   )
 }

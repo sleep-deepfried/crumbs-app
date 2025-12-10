@@ -53,6 +53,9 @@ export async function getDashboardData() {
 
   const transactions = await getUserTransactions(user.id)
   const monthlyExpenses = calculateMonthlyExpenses(transactions)
+  const monthlyIncome = transactions
+    .filter((t: { type: string }) => t.type === 'INCOME')
+    .reduce((sum: number, t: { amount: number }) => sum + t.amount, 0)
   const safeToSpend = calculateSafeToSpend(user.spendingLimit, monthlyExpenses)
 
   // Get friends' data
@@ -76,6 +79,13 @@ export async function getDashboardData() {
     crumbMood: f.friend.crumbMood as MoodState,
   }))
 
+  // Get recurring transactions
+  const recurringTransactions = await prisma.recurringTransaction.findMany({
+    where: { userId: user.id, isActive: true },
+    orderBy: { nextOccurrence: 'asc' },
+    take: 5,
+  })
+
   return {
     user: {
       ...user,
@@ -84,8 +94,9 @@ export async function getDashboardData() {
     },
     safeToSpend,
     monthlyExpenses,
-    monthlyIncome: user.monthlyIncome,
+    monthlyIncome,
     recentTransactions: transactions.slice(0, 5),
+    recurringTransactions,
     friends,
   }
 }

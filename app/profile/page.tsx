@@ -18,12 +18,13 @@ export default async function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#FDF6EC] pb-24">
       {/* Header Bar */}
-      <div className="bg-[#4A3B32] text-white px-4 py-3">
-        <h1 className="text-xl font-bold">Profile</h1>
+      <div className="bg-[#4A3B32] text-white px-4 py-4">
+        <h1 className="text-2xl font-bold">Profile</h1>
+        <p className="text-xs opacity-80 mt-1">@{user.username}</p>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-md mx-auto p-4">
+      <div className="max-w-md mx-auto px-4 pt-6">
         {/* Mascot Display */}
         <div className="bg-linear-to-b from-[#8B7355] to-[#A0826D] rounded-2xl p-6 mb-6 shadow-lg">
           <MascotStage mood={user.crumbMood} brewLevel={user.brewLevel} />
@@ -37,8 +38,8 @@ export default async function ProfilePage() {
           <div className="w-24 h-24 bg-[#E6C288] rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-[#4A3B32]">
             <span className="text-5xl">👤</span>
           </div>
-          <h2 className="text-2xl font-bold text-[#4A3B32] mb-1">@{user.username}</h2>
-          <p className="text-sm text-[#4A3B32]/60 mb-4">{user.email}</p>
+          <h2 className="text-3xl font-bold text-[#4A3B32] mb-2">@{user.username}</h2>
+          <p className="text-sm text-[#4A3B32]/60 mb-6">{user.email}</p>
           
           <div className="flex items-center justify-center gap-6 mt-6">
             <div>
@@ -115,11 +116,14 @@ export default async function ProfilePage() {
         <form action={signout}>
           <button
             type="submit"
-            className="w-full bg-[#D9534F] text-white py-3 rounded-xl font-semibold hover:bg-[#D9534F]/90 active:scale-98 transition-all"
+            className="w-full bg-[#D9534F] text-white py-3 rounded-xl font-semibold hover:bg-[#D9534F]/90 active:scale-95 transition-all shadow-md"
           >
             Sign Out
           </button>
         </form>
+
+        {/* Bottom spacing */}
+        <div className="h-8" />
       </div>
 
       {/* Bottom Navigation */}

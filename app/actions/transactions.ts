@@ -15,7 +15,10 @@ export async function addTransaction(
   userId: string,
   amount: number,
   category: TransactionCategory,
-  description?: string
+  description?: string,
+  isSavings: boolean = false,
+  subcategory?: string,
+  mainCategory?: string
 ) {
   try {
     const type = getTransactionType(category)
@@ -27,7 +30,10 @@ export async function addTransaction(
         amount,
         type,
         category,
+        isSavings,
         description: description || null,
+        subcategory: subcategory || null,
+        mainCategory: mainCategory || null,
       },
     })
 
@@ -53,7 +59,7 @@ export async function addTransaction(
 
     // Update totalSaved if this is a savings transaction
     let newTotalSaved = user.totalSaved
-    if (category === 'SAVINGS') {
+    if (isSavings && category === 'EXPENSE') {
       newTotalSaved += amount
     }
 
