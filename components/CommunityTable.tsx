@@ -88,9 +88,9 @@ export default function CommunityTable({ friends }: CommunityTableProps) {
                   title={`${friend.username}: ${getMoodLabel(friend.crumbMood)}`}
                 >
                   <span aria-hidden="true">
-                    {friend.crumbMood === 'SOGGY' && '💦'}
-                    {friend.crumbMood === 'CRUMBLY' && '⚠️'}
-                    {friend.crumbMood === 'HARMONY' && '✨'}
+                  {friend.crumbMood === 'SOGGY' && '💦'}
+                  {friend.crumbMood === 'CRUMBLY' && '⚠️'}
+                  {friend.crumbMood === 'HARMONY' && '✨'}
                   </span>
                 </div>
               </div>

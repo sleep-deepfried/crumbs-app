@@ -57,10 +57,10 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ToastProvider>
-          <AddTransactionProvider>
-            <InstallPrompt />
-            {children}
-          </AddTransactionProvider>
+        <AddTransactionProvider>
+          <InstallPrompt />
+          {children}
+        </AddTransactionProvider>
         </ToastProvider>
       </body>
     </html>
