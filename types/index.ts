@@ -6,6 +6,46 @@ export type TransactionCategory = 'EXPENSE' | 'INCOME'
 
 export type BrewLevel = 1 | 2 | 3 // 1=Glass, 2=Mug, 3=Press
 
+export type AccountType = 'BANK' | 'E-WALLET' | 'CREDIT_CARD'
+
+export type AccountCategory = 'EMERGENCY' | 'SAVINGS' | 'SPENDING' | 'INVESTMENT' | 'GENERAL'
+
+export type RewardsType = 'CASHBACK' | 'POINTS' | 'MILES' | null
+
+export interface Account {
+  id: string
+  userId: string
+  name: string
+  type: AccountType
+  balance: number
+  color: string | null
+  category: AccountCategory
+  description: string | null
+  icon: string | null
+  sortOrder: number
+  
+  // Goal tracking
+  goalEnabled: boolean
+  goalAmount: number | null
+  goalDeadline: Date | null
+  goalStartBalance: number | null
+  goalStartDate: Date | null
+  
+  // Credit card specific fields
+  creditLimit: number | null
+  creditUsed: number | null
+  statementDate: number | null
+  paymentDueDate: number | null
+  minimumPayment: number | null
+  interestRate: number | null
+  rewardsType: RewardsType
+  rewardsBalance: number | null
+  rewardsRate: number | null
+  
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface User {
   id: string
   username: string
@@ -31,6 +71,8 @@ export interface Transaction {
   isSavings: boolean
   description: string | null
   date: Date
+  creditCardId: string | null
+  accountId: string | null
 }
 
 export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'

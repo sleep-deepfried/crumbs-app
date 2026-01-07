@@ -8,7 +8,7 @@ import { MoodState, BrewLevel, TransactionType, TransactionCategory, RecurringFr
 
 export async function getCurrentUser() {
   const supabase = await createClient()
-  
+
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser()
@@ -46,7 +46,7 @@ export async function getUserTransactions(userId: string) {
 
 export async function getDashboardData() {
   const user = await getCurrentUser()
-  
+
   if (!user) {
     return null
   }
@@ -56,6 +56,26 @@ export async function getDashboardData() {
   const monthlyIncome = transactions
     .filter((t: { type: string }) => t.type === 'INCOME')
     .reduce((sum: number, t: { amount: number }) => sum + t.amount, 0)
+  const lastMonthStart = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)
+  const lastMonthEnd = new Date(new Date().getFullYear(), new Date().getMonth(), 0, 23, 59, 59, 999)
+
+  const lastMonthTransactions = await prisma.transaction.findMany({
+    where: {
+      userId: user.id,
+      date: {
+        gte: lastMonthStart,
+        lte: lastMonthEnd,
+      },
+      type: 'EXPENSE',
+    },
+  })
+  const lastMonthExpenses = calculateMonthlyExpenses(lastMonthTransactions)
+
+  const expenses = transactions.filter((t: { type: string }) => t.type === 'EXPENSE')
+  const largestExpense = expenses.length > 0
+    ? expenses.reduce((prev, current) => (prev.amount > current.amount ? prev : current), expenses[0])
+    : null
+
   const safeToSpend = calculateSafeToSpend(user.spendingLimit, monthlyExpenses)
 
   // Get friends' data
@@ -86,26 +106,53 @@ export async function getDashboardData() {
     take: 5,
   })
 
+  // Get accounts
+  const accounts = await prisma.account.findMany({
+    where: { userId: user.id },
+    orderBy: { balance: 'desc' },
+  })
+
+  // Calculate total saved from account balances
+  const totalSaved = accounts.reduce((sum, account) => sum + account.balance, 0)
+
   return {
     user: {
       ...user,
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
       crumbMood: user.crumbMood as MoodState,
       brewLevel: user.brewLevel as BrewLevel,
+      totalSaved, // Override with calculated value
     },
     safeToSpend,
     monthlyExpenses,
     monthlyIncome,
     recentTransactions: transactions.slice(0, 5).map(t => ({
       ...t,
+      date: t.date.toISOString(),
+      type: t.type as TransactionType,
+      category: t.category as TransactionCategory,
+    })),
+    allTransactions: transactions.map(t => ({
+      ...t,
+      date: t.date.toISOString(),
       type: t.type as TransactionType,
       category: t.category as TransactionCategory,
     })),
     recurringTransactions: recurringTransactions.map(rt => ({
       ...rt,
+      nextOccurrence: rt.nextOccurrence.toISOString(),
       type: rt.type as TransactionType,
       category: rt.category as TransactionCategory,
       frequency: rt.frequency as RecurringFrequency,
     })),
+    accounts, // Add accounts to response
+    lastMonthExpenses,
+    largestExpense: largestExpense ? {
+      category: largestExpense.category as TransactionCategory,
+      amount: largestExpense.amount,
+      subcategory: largestExpense.subcategory,
+    } : null,
     friends,
   }
 }

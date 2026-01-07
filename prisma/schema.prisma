@@ -28,6 +28,7 @@ model User {
   
   transactions           Transaction[]
   recurringTransactions  RecurringTransaction[]
+  accounts               Account[]
   friends                Friendship[]  @relation("UserFriends")
   friendOf               Friendship[]  @relation("FriendUsers")
   
@@ -60,10 +61,20 @@ model Transaction {
   description  String?
   date         DateTime @default(now())
   
+  // Credit card linking
+  creditCardId String?
+  creditCard   Account? @relation("CreditCardTransactions", fields: [creditCardId], references: [id])
+  
+  // Regular account linking (for bank/e-wallet transactions)
+  accountId    String?
+  account      Account? @relation("AccountTransactions", fields: [accountId], references: [id])
+  
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
   @@index([date])
+  @@index([creditCardId])
+  @@index([accountId])
 }
 
 model RecurringTransaction {
@@ -98,3 +109,47 @@ model RecurringTransaction {
   @@index([nextOccurrence])
   @@index([isActive])
 }
+
+model Account {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String   // e.g., "BDO Savings", "GCash"
+  type        String   // "BANK", "E-WALLET", or "CREDIT_CARD"
+  balance     Float    @default(0)
+  color       String?  // Hex color for UI icon background
+  
+  // Organization fields
+  category    String   @default("GENERAL") // "EMERGENCY", "SAVINGS", "SPENDING", "INVESTMENT", "GENERAL"
+  description String?  // User notes about account purpose
+  icon        String?  // Optional emoji or icon name
+  sortOrder   Int      @default(0) // Manual ordering within category
+  
+  // Goal tracking
+  goalEnabled       Boolean  @default(false)
+  goalAmount        Float?
+  goalDeadline      DateTime?
+  goalStartBalance  Float?
+  goalStartDate     DateTime?
+  
+  // Credit card specific fields
+  creditLimit        Float?
+  creditUsed         Float?
+  statementDate      Int?
+  paymentDueDate     Int?
+  minimumPayment     Float?
+  interestRate       Float?
+  rewardsType        String?
+  rewardsBalance     Float?
+  rewardsRate        Float?
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCardTransactions Transaction[] @relation("CreditCardTransactions")
+  accountTransactions    Transaction[] @relation("AccountTransactions")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([userId, category])
+}
+

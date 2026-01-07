@@ -12,7 +12,7 @@ interface RecurringTransaction {
   category: string;
   subcategory: string | null;
   frequency: string;
-  nextOccurrence: Date;
+  nextOccurrence: Date | string;
 }
 
 interface RecurringTransactionsListProps {

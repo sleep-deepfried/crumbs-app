@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { TransactionCategory, RecurringFrequency } from '@/types'
 
 export const transactionSchema = z.object({
   amount: z

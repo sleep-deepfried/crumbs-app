@@ -1,4 +1,4 @@
-import { CreditCard, TrendingUp, TrendingDown, ArrowUp, DollarSign } from 'lucide-react'
+import { CreditCard, TrendingUp, TrendingDown, ArrowUp, PhilippinePeso } from 'lucide-react'
 import { getResponsiveFontSize } from '@/lib/utils'
 
 interface MetricsGridProps {
@@ -44,12 +44,12 @@ export default function MetricsGrid({
       <h2 className="section-heading my-4">This Month:</h2>
       <div className="grid grid-cols-2 gap-4">
         {/* Total Spending */}
-        <div className="metric-card">
+        <div className="card-accent">
           <div className="flex items-center justify-between mb-2">
-            <span className="metric-label">Total Spending</span>
-            <CreditCard size={20} className="text-[#4A3B32]/60" strokeWidth={2} />
+            <span className="text-xs font-medium text-[#E6C288]">Total Spending</span>
+            <CreditCard size={20} className="text-[#E6C288]" strokeWidth={2} />
           </div>
-          <p className={`${spendingFontSize} font-bold text-[#4A3B32]`}>
+          <p className={`${spendingFontSize} font-bold text-white`}>
             {formattedSpending}
           </p>
         </div>
@@ -89,12 +89,12 @@ export default function MetricsGrid({
         </div>
 
         {/* Total Income */}
-        <div className="metric-card">
+        <div className="card-accent">
           <div className="flex items-center justify-between mb-2">
-            <span className="metric-label">Total Income</span>
-            <DollarSign size={20} className="text-[#4A3B32]/60" strokeWidth={2} />
+            <span className="text-xs font-medium text-[#E6C288]">Total Income</span>
+            <PhilippinePeso size={20} className="text-[#E6C288]" strokeWidth={2} />
           </div>
-          <p className={`${incomeFontSize} font-bold text-[#4A3B32]`}>
+          <p className={`${incomeFontSize} font-bold text-white`}>
             {formattedIncome}
           </p>
         </div>

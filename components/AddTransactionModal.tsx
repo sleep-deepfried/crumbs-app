@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { addTransaction } from "@/app/actions/transactions";
 import { getCurrentUser } from "@/app/actions/user";
 import { createRecurringTransaction } from "@/app/actions/recurring-transactions";
-import { TransactionCategory, RecurringFrequency } from "@/types";
+import { TransactionCategory, RecurringFrequency, Account } from "@/types";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { TrendingDown, TrendingUp, Trash2, RefreshCw } from "lucide-react";
 import {
@@ -19,11 +19,13 @@ import { useToast } from "@/components/ToastContext";
 interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  accounts?: Account[];
 }
 
 export default function AddTransactionModal({
   isOpen,
   onClose,
+  accounts = [],
 }: AddTransactionModalProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
@@ -50,6 +52,7 @@ export default function AddTransactionModal({
   });
 
   // Watch form values
+  // eslint-disable-next-line react-hooks/incompatible-library
   const category = watch("category");
   const selectedCategory = watch("selectedCategory");
   const isRecurring = watch("isRecurring");
@@ -69,6 +72,20 @@ export default function AddTransactionModal({
   const [swipedCategory, setSwipedCategory] = useState<string | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string>("");
+  const [showAccountPopup, setShowAccountPopup] = useState(false);
+  const [accountTab, setAccountTab] = useState<"BANK" | "E-WALLET" | "CREDIT">(
+    "BANK"
+  );
+
+  const creditCards = accounts.filter((a) => a.type === "CREDIT_CARD");
+  const bankAccounts = accounts.filter((a) => a.type === "BANK");
+  const ewalletAccounts = accounts.filter((a) => a.type === "E-WALLET");
+
+  const getSelectedAccountName = () => {
+    const account = accounts.find((a) => a.id === selectedAccount);
+    return account ? account.name : null;
+  };
 
   const baseSubcategories = {
     NEEDS: [
@@ -154,6 +171,9 @@ export default function AddTransactionModal({
       setLoading(false);
       setShowCustomCategoryInput(false);
       setCustomCategory("");
+      setSelectedAccount("");
+      setShowAccountPopup(false);
+      setAccountTab("BANK");
     }
   }, [isOpen, reset]);
 
@@ -183,6 +203,12 @@ export default function AddTransactionModal({
   }, [isOpen, onClose]);
 
   async function onSubmit(data: TransactionFormData) {
+    // Validate wallet selection
+    if (!selectedAccount) {
+      showError("Please select a wallet");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -223,6 +249,10 @@ export default function AddTransactionModal({
           showError(result.error || "Failed to create recurring transaction");
         }
       } else {
+        // Determine if selected account is a credit card
+        const selectedAcc = accounts.find((a) => a.id === selectedAccount);
+        const isCreditCard = selectedAcc?.type === "CREDIT_CARD";
+
         // Create one-time transaction
         const result = await addTransaction(
           user.id,
@@ -233,7 +263,9 @@ export default function AddTransactionModal({
           data.category === "EXPENSE"
             ? data.selectedCategory || undefined
             : undefined,
-          data.category === "EXPENSE" ? activeTab : undefined
+          data.category === "EXPENSE" ? activeTab : undefined,
+          isCreditCard ? selectedAccount : undefined, // creditCardId
+          !isCreditCard ? selectedAccount : undefined // accountId
         );
         if (result.success) {
           showSuccess(
@@ -278,9 +310,12 @@ export default function AddTransactionModal({
       aria-modal="true"
       aria-labelledby="transaction-modal-title"
     >
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header with Tabs */}
-        <div className="bg-[#4A3B32] text-white rounded-t-3xl">
+        <div className="bg-[#4A3B32] text-white rounded-t-3xl shrink-0">
           {/* Category Tabs in Header */}
           <div className="relative px-4 pt-6">
             <h2 id="transaction-modal-title" className="sr-only">
@@ -325,563 +360,816 @@ export default function AddTransactionModal({
             />
           </div>
         </div>
-        {/* Form */}
-        <div
-          className="bg-[#FDF6EC] px-4 py-6 max-h-[80vh] overflow-y-auto"
-          role="tabpanel"
-          id={`${category.toLowerCase()}-panel`}
-        >
-          <form onSubmit={handleFormSubmit(onSubmit)} className="space-y-6">
-            {/* Amount Input */}
-            <div className="card-crumbs">
-              <label
-                htmlFor="amount-input"
-                className="block text-sm font-semibold text-[#4A3B32] mb-3"
-              >
-                Amount (₱)
-              </label>
-              <div className="relative">
-                <span
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-[#4A3B32]/40"
-                  aria-hidden="true"
-                >
-                  ₱
-                </span>
-                <input
-                  id="amount-input"
-                  type="number"
-                  {...register("amount")}
-                  placeholder="0"
-                  step="0.01"
-                  min="0"
-                  className={`w-full pl-12 pr-4 py-4 text-3xl font-bold text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 ${
-                    errors.amount ? "border-[#D9534F]" : "border-[#E6C288]"
-                  } focus:border-[#4A3B32] focus:outline-none`}
-                  autoFocus
-                  aria-invalid={!!errors.amount}
-                  aria-describedby={errors.amount ? "amount-error" : undefined}
-                />
-              </div>
-              {errors.amount && (
-                <p
-                  id="amount-error"
-                  className="text-xs text-[#D9534F] mt-1"
-                  role="alert"
-                >
-                  {errors.amount.message}
-                </p>
-              )}
-            </div>
 
-            {/* Category Selection (only for expenses) */}
-            {category === "EXPENSE" && (
-              <div className="card-crumbs relative">
+        <form
+          onSubmit={handleFormSubmit(onSubmit)}
+          className="flex flex-col flex-1 min-h-0"
+        >
+          {/* Scrollable Form Content */}
+          <div
+            className="bg-[#FDF6EC] px-4 py-6 overflow-y-auto flex-1 scrollbar-hide"
+            role="tabpanel"
+            id={`${category.toLowerCase()}-panel`}
+          >
+            <div className="space-y-6">
+              {/* Amount Input */}
+              <div className="card-crumbs">
                 <label
-                  htmlFor="category-selector"
+                  htmlFor="amount-input"
                   className="block text-sm font-semibold text-[#4A3B32] mb-3"
                 >
-                  Category
+                  Amount (₱)
                 </label>
-                <button
-                  id="category-selector"
-                  type="button"
-                  onClick={() => setShowCategoryPopup(!showCategoryPopup)}
-                  className="w-full px-4 py-3 text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 border-[#E6C288] focus:border-[#4A3B32] focus:outline-none flex items-center justify-between hover:border-[#4A3B32] transition-colors"
-                  aria-expanded={showCategoryPopup}
-                  aria-haspopup="true"
-                  aria-controls="category-popup"
-                  aria-describedby={
-                    errors.selectedCategory ? "category-error" : undefined
-                  }
-                >
-                  <span className="font-semibold">
-                    {selectedCategory || "Select category"}
-                  </span>
-                  <svg
-                    className={`w-5 h-5 transition-transform ${
-                      showCategoryPopup ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="relative">
+                  <span
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-3xl font-bold text-[#4A3B32]/40"
                     aria-hidden="true"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                    ₱
+                  </span>
+                  <input
+                    id="amount-input"
+                    type="number"
+                    {...register("amount")}
+                    placeholder="0"
+                    step="0.01"
+                    min="0"
+                    className={`w-full pl-12 pr-4 py-4 text-3xl font-bold text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 ${
+                      errors.amount ? "border-[#D9534F]" : "border-[#E6C288]"
+                    } focus:border-[#4A3B32] focus:outline-none`}
+                    autoFocus
+                    aria-invalid={!!errors.amount}
+                    aria-describedby={
+                      errors.amount ? "amount-error" : undefined
+                    }
+                  />
+                </div>
+                {errors.amount && (
+                  <p
+                    id="amount-error"
+                    className="text-xs text-[#D9534F] mt-1"
+                    role="alert"
+                  >
+                    {errors.amount.message}
+                  </p>
+                )}
+              </div>
 
-                {/* Popup Card with Tabs */}
-                {showCategoryPopup && (
-                  <>
-                    {/* Backdrop blur */}
-                    <div
-                      className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-fade-in"
-                      onClick={() => {
-                        setShowCategoryPopup(false);
-                        setShowCustomCategoryInput(false);
-                        setCustomCategory("");
-                        setSwipedCategory(null);
-                      }}
+              {/* Category Selection (only for expenses) */}
+              {category === "EXPENSE" && (
+                <div className="card-crumbs relative">
+                  <label
+                    htmlFor="category-selector"
+                    className="block text-sm font-semibold text-[#4A3B32] mb-3"
+                  >
+                    Category
+                  </label>
+                  <button
+                    id="category-selector"
+                    type="button"
+                    onClick={() => setShowCategoryPopup(!showCategoryPopup)}
+                    className="w-full px-4 py-3 text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 border-[#E6C288] focus:border-[#4A3B32] focus:outline-none flex items-center justify-between hover:border-[#4A3B32] transition-colors"
+                    aria-expanded={showCategoryPopup}
+                    aria-haspopup="true"
+                    aria-controls="category-popup"
+                    aria-describedby={
+                      errors.selectedCategory ? "category-error" : undefined
+                    }
+                  >
+                    <span className="font-semibold">
+                      {selectedCategory || "Select category"}
+                    </span>
+                    <svg
+                      className={`w-5 h-5 transition-transform ${
+                        showCategoryPopup ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                       aria-hidden="true"
-                    />
-
-                    {/* Centered popup card */}
-                    <div
-                      className="fixed inset-0 flex items-center justify-center z-50 px-4 pointer-events-none animate-scale-in"
-                      role="dialog"
-                      aria-modal="true"
-                      aria-labelledby="category-popup-title"
                     >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Popup Card with Tabs */}
+                  {showCategoryPopup && (
+                    <>
+                      {/* Backdrop blur */}
                       <div
-                        id="category-popup"
-                        className="w-full max-w-md bg-white rounded-xl shadow-2xl border-2 border-[#E6C288] overflow-hidden max-h-[70vh] flex flex-col pointer-events-auto"
+                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-fade-in"
+                        onClick={() => {
+                          setShowCategoryPopup(false);
+                          setShowCustomCategoryInput(false);
+                          setCustomCategory("");
+                          setSwipedCategory(null);
+                        }}
+                        aria-hidden="true"
+                      />
+
+                      {/* Centered popup card */}
+                      <div
+                        className="fixed inset-0 flex items-center justify-center z-50 px-4 pointer-events-none animate-scale-in"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="category-popup-title"
                       >
-                        {/* Tab Headers */}
-                        <div className="relative border-b-2 border-[#E6C288] shrink-0">
-                          <h3 id="category-popup-title" className="sr-only">
-                            Select Category
-                          </h3>
+                        <div
+                          id="category-popup"
+                          className="w-full max-w-md bg-white rounded-xl shadow-2xl border-2 border-[#E6C288] overflow-hidden max-h-[70vh] flex flex-col pointer-events-auto"
+                        >
+                          {/* Tab Headers */}
+                          <div className="relative border-b-2 border-[#E6C288] shrink-0">
+                            <h3 id="category-popup-title" className="sr-only">
+                              Select Category
+                            </h3>
+                            <div
+                              className="flex"
+                              role="tablist"
+                              aria-label="Category type"
+                            >
+                              {["NEEDS", "WANTS", "SAVINGS"].map((tab) => (
+                                <button
+                                  key={tab}
+                                  type="button"
+                                  onClick={() => setActiveTab(tab)}
+                                  className={`flex-1 py-3 text-sm font-semibold transition-colors ${
+                                    activeTab === tab
+                                      ? "text-[#4A3B32]"
+                                      : "text-[#4A3B32]/70 hover:text-[#4A3B32]"
+                                  }`}
+                                  role="tab"
+                                  aria-selected={activeTab === tab}
+                                  aria-controls={`${tab.toLowerCase()}-categories`}
+                                >
+                                  {tab}
+                                </button>
+                              ))}
+                            </div>
+                            {/* Sliding indicator */}
+                            <div
+                              className="absolute bottom-0 h-0.5 bg-[#4A3B32] transition-transform duration-300 ease-in-out"
+                              style={{
+                                width: "33.333%",
+                                transform:
+                                  activeTab === "WANTS"
+                                    ? "translateX(100%)"
+                                    : activeTab === "SAVINGS"
+                                    ? "translateX(200%)"
+                                    : "translateX(0)",
+                              }}
+                              aria-hidden="true"
+                            />
+                          </div>
+
+                          {/* Tab Content - Subcategories */}
                           <div
-                            className="flex"
-                            role="tablist"
-                            aria-label="Category type"
+                            className="overflow-y-auto flex-1"
+                            role="tabpanel"
+                            id={`${activeTab.toLowerCase()}-categories`}
                           >
-                            {["NEEDS", "WANTS", "SAVINGS"].map((tab) => (
+                            {subcategories[
+                              activeTab as keyof typeof subcategories
+                            ].map((subcat) => {
+                              const isCustom =
+                                customSubcategories[
+                                  activeTab as keyof typeof customSubcategories
+                                ].includes(subcat);
+                              const isSwiped = swipedCategory === subcat;
+
+                              return (
+                                <div
+                                  key={subcat}
+                                  className="relative overflow-hidden"
+                                  onWheel={(e) => {
+                                    if (
+                                      isCustom &&
+                                      Math.abs(e.deltaX) > Math.abs(e.deltaY)
+                                    ) {
+                                      // Horizontal scroll (trackpad swipe)
+                                      if (e.deltaX > 10) {
+                                        // Swiped left
+                                        setSwipedCategory(subcat);
+                                      } else if (e.deltaX < -10) {
+                                        // Swiped right
+                                        setSwipedCategory(null);
+                                      }
+                                    }
+                                  }}
+                                >
+                                  {/* Delete button (revealed on swipe) */}
+                                  {isCustom && (
+                                    <div className="absolute inset-y-0 right-0 flex items-center justify-center bg-[#D9534F] w-20">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const currentTab =
+                                            activeTab as keyof typeof customSubcategories;
+                                          setCustomSubcategories((prev) => ({
+                                            ...prev,
+                                            [currentTab]: prev[
+                                              currentTab
+                                            ].filter((cat) => cat !== subcat),
+                                          }));
+                                          setSwipedCategory(null);
+                                          if (selectedCategory === subcat) {
+                                            setValue("selectedCategory", "");
+                                          }
+                                        }}
+                                        className="p-2"
+                                      >
+                                        <Trash2
+                                          size={20}
+                                          className="text-white"
+                                          strokeWidth={2}
+                                        />
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {/* Category button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (isSwiped) {
+                                        setSwipedCategory(null);
+                                      } else {
+                                        setValue("selectedCategory", subcat);
+                                        setShowCategoryPopup(false);
+                                        setShowCustomCategoryInput(false);
+                                        setCustomCategory("");
+                                        setSwipedCategory(null);
+                                      }
+                                    }}
+                                    onMouseDown={(e) => {
+                                      if (isCustom) {
+                                        e.preventDefault();
+                                        setTouchStart(e.clientX);
+                                      }
+                                    }}
+                                    onMouseMove={(e) => {
+                                      if (
+                                        isCustom &&
+                                        touchStart !== null &&
+                                        e.buttons === 1
+                                      ) {
+                                        e.preventDefault();
+                                        setTouchEnd(e.clientX);
+                                      }
+                                    }}
+                                    onMouseUp={(e) => {
+                                      if (
+                                        isCustom &&
+                                        touchStart !== null &&
+                                        touchEnd !== null
+                                      ) {
+                                        e.preventDefault();
+                                        const swipeDistance =
+                                          touchStart - touchEnd;
+                                        if (swipeDistance > 50) {
+                                          // Swiped left
+                                          setSwipedCategory(subcat);
+                                        } else if (swipeDistance < -50) {
+                                          // Swiped right
+                                          setSwipedCategory(null);
+                                        }
+                                        setTouchStart(null);
+                                        setTouchEnd(null);
+                                      }
+                                    }}
+                                    onMouseLeave={() => {
+                                      if (isCustom) {
+                                        setTouchStart(null);
+                                        setTouchEnd(null);
+                                      }
+                                    }}
+                                    onTouchStart={(e) => {
+                                      if (isCustom) {
+                                        setTouchStart(e.touches[0].clientX);
+                                      }
+                                    }}
+                                    onTouchMove={(e) => {
+                                      if (isCustom) {
+                                        setTouchEnd(e.touches[0].clientX);
+                                      }
+                                    }}
+                                    onTouchEnd={() => {
+                                      if (
+                                        isCustom &&
+                                        touchStart !== null &&
+                                        touchEnd !== null
+                                      ) {
+                                        const swipeDistance =
+                                          touchStart - touchEnd;
+                                        if (swipeDistance > 50) {
+                                          // Swiped left
+                                          setSwipedCategory(subcat);
+                                        } else if (swipeDistance < -50) {
+                                          // Swiped right
+                                          setSwipedCategory(null);
+                                        }
+                                        setTouchStart(null);
+                                        setTouchEnd(null);
+                                      }
+                                    }}
+                                    title={
+                                      isCustom
+                                        ? "Swipe left to delete this custom category"
+                                        : undefined
+                                    }
+                                    style={{
+                                      transform: isSwiped
+                                        ? "translateX(-80px)"
+                                        : "translateX(0)",
+                                      transition:
+                                        "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                    }}
+                                    className={`group relative w-full px-4 py-3 text-left hover:bg-[#FDF6EC] ${
+                                      selectedCategory === subcat
+                                        ? "bg-[#E6C288]/20 font-semibold"
+                                        : "bg-white"
+                                    }`}
+                                  >
+                                    <span className="text-sm text-[#4A3B32]">
+                                      {subcat}
+                                    </span>
+                                  </button>
+                                </div>
+                              );
+                            })}
+
+                            {/* Add Category Button */}
+                            {!showCustomCategoryInput ? (
                               <button
-                                key={tab}
                                 type="button"
-                                onClick={() => setActiveTab(tab)}
+                                onClick={() => setShowCustomCategoryInput(true)}
+                                className="w-full px-4 py-3 text-left hover:bg-[#FDF6EC] transition-colors border-t border-[#E6C288]/50"
+                              >
+                                <span className="text-sm text-[#4A3B32]/60 font-medium">
+                                  + Add Category
+                                </span>
+                              </button>
+                            ) : (
+                              <div className="px-4 py-3 border-t border-[#E6C288]/50">
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={customCategory}
+                                    onChange={(e) =>
+                                      setCustomCategory(e.target.value)
+                                    }
+                                    placeholder="Enter category name"
+                                    className="flex-1 px-3 py-2 text-sm text-[#4A3B32] bg-white rounded-lg border border-[#E6C288] focus:border-[#4A3B32] focus:outline-none"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (
+                                        e.key === "Enter" &&
+                                        customCategory.trim()
+                                      ) {
+                                        const newCategory =
+                                          customCategory.trim();
+                                        const currentTab =
+                                          activeTab as keyof typeof customSubcategories;
+
+                                        // Add to custom subcategories if not already exists
+                                        if (
+                                          !subcategories[currentTab].includes(
+                                            newCategory
+                                          )
+                                        ) {
+                                          setCustomSubcategories((prev) => ({
+                                            ...prev,
+                                            [currentTab]: [
+                                              ...prev[currentTab],
+                                              newCategory,
+                                            ],
+                                          }));
+                                        }
+
+                                        setValue(
+                                          "selectedCategory",
+                                          newCategory
+                                        );
+                                        setShowCategoryPopup(false);
+                                        setShowCustomCategoryInput(false);
+                                        setCustomCategory("");
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (customCategory.trim()) {
+                                        const newCategory =
+                                          customCategory.trim();
+                                        const currentTab =
+                                          activeTab as keyof typeof customSubcategories;
+
+                                        // Add to custom subcategories if not already exists
+                                        if (
+                                          !subcategories[currentTab].includes(
+                                            newCategory
+                                          )
+                                        ) {
+                                          setCustomSubcategories((prev) => ({
+                                            ...prev,
+                                            [currentTab]: [
+                                              ...prev[currentTab],
+                                              newCategory,
+                                            ],
+                                          }));
+                                        }
+
+                                        setValue(
+                                          "selectedCategory",
+                                          newCategory
+                                        );
+                                        setShowCategoryPopup(false);
+                                        setShowCustomCategoryInput(false);
+                                        setCustomCategory("");
+                                      }
+                                    }}
+                                    disabled={!customCategory.trim()}
+                                    className="px-3 py-2 bg-[#4A3B32] text-white text-sm font-medium rounded-lg hover:bg-[#4A3B32]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    Add
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Account Selector (for both income and expense) */}
+              {accounts.length > 0 && (
+                <div className="card-crumbs relative">
+                  <label
+                    htmlFor="account-selector"
+                    className="block text-sm font-semibold text-[#4A3B32] mb-3"
+                  >
+                    Wallet
+                  </label>
+                  <button
+                    id="account-selector"
+                    type="button"
+                    onClick={() => setShowAccountPopup(!showAccountPopup)}
+                    className={`w-full px-4 py-3 text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 ${
+                      !selectedAccount && errors.amount
+                        ? "border-red-500"
+                        : "border-[#E6C288] focus:border-[#4A3B32]"
+                    } focus:outline-none flex items-center justify-between hover:border-[#4A3B32] transition-colors`}
+                  >
+                    <span
+                      className={`font-semibold ${
+                        !getSelectedAccountName() ? "text-[#4A3B32]/50" : ""
+                      }`}
+                    >
+                      {getSelectedAccountName() || "Select wallet"}
+                    </span>
+                    <svg
+                      className={`w-5 h-5 transition-transform ${
+                        showAccountPopup ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Account Popup with Tabs */}
+                  {showAccountPopup && (
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-fade-in"
+                        onClick={() => setShowAccountPopup(false)}
+                      />
+
+                      {/* Popup Card */}
+                      <div className="fixed inset-0 flex items-center justify-center z-50 px-4 pointer-events-none animate-scale-in">
+                        <div className="w-full max-w-md bg-white rounded-xl shadow-2xl border-2 border-[#E6C288] overflow-hidden max-h-[70vh] flex flex-col pointer-events-auto">
+                          {/* Tab Headers */}
+                          <div className="relative border-b-2 border-[#E6C288] shrink-0">
+                            <h3 className="sr-only">Select Account</h3>
+                            <div className="flex">
+                              <button
+                                type="button"
+                                onClick={() => setAccountTab("BANK")}
                                 className={`flex-1 py-3 text-sm font-semibold transition-colors ${
-                                  activeTab === tab
+                                  accountTab === "BANK"
                                     ? "text-[#4A3B32]"
                                     : "text-[#4A3B32]/70 hover:text-[#4A3B32]"
                                 }`}
-                                role="tab"
-                                aria-selected={activeTab === tab}
-                                aria-controls={`${tab.toLowerCase()}-categories`}
                               >
-                                {tab}
+                                BANK
                               </button>
-                            ))}
-                          </div>
-                          {/* Sliding indicator */}
-                          <div
-                            className="absolute bottom-0 h-0.5 bg-[#4A3B32] transition-transform duration-300 ease-in-out"
-                            style={{
-                              width: "33.333%",
-                              transform:
-                                activeTab === "WANTS"
-                                  ? "translateX(100%)"
-                                  : activeTab === "SAVINGS"
-                                  ? "translateX(200%)"
-                                  : "translateX(0)",
-                            }}
-                            aria-hidden="true"
-                          />
-                        </div>
-
-                        {/* Tab Content - Subcategories */}
-                        <div
-                          className="overflow-y-auto flex-1"
-                          role="tabpanel"
-                          id={`${activeTab.toLowerCase()}-categories`}
-                        >
-                          {subcategories[
-                            activeTab as keyof typeof subcategories
-                          ].map((subcat) => {
-                            const isCustom =
-                              customSubcategories[
-                                activeTab as keyof typeof customSubcategories
-                              ].includes(subcat);
-                            const isSwiped = swipedCategory === subcat;
-
-                            return (
-                              <div
-                                key={subcat}
-                                className="relative overflow-hidden"
-                                onWheel={(e) => {
-                                  if (
-                                    isCustom &&
-                                    Math.abs(e.deltaX) > Math.abs(e.deltaY)
-                                  ) {
-                                    // Horizontal scroll (trackpad swipe)
-                                    if (e.deltaX > 10) {
-                                      // Swiped left
-                                      setSwipedCategory(subcat);
-                                    } else if (e.deltaX < -10) {
-                                      // Swiped right
-                                      setSwipedCategory(null);
-                                    }
-                                  }
-                                }}
+                              <button
+                                type="button"
+                                onClick={() => setAccountTab("E-WALLET")}
+                                className={`flex-1 py-3 text-sm font-semibold transition-colors ${
+                                  accountTab === "E-WALLET"
+                                    ? "text-[#4A3B32]"
+                                    : "text-[#4A3B32]/70 hover:text-[#4A3B32]"
+                                }`}
                               >
-                                {/* Delete button (revealed on swipe) */}
-                                {isCustom && (
-                                  <div className="absolute inset-y-0 right-0 flex items-center justify-center bg-[#D9534F] w-20">
+                                E-WALLET
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setAccountTab("CREDIT")}
+                                className={`flex-1 py-3 text-sm font-semibold transition-colors ${
+                                  accountTab === "CREDIT"
+                                    ? "text-[#4A3B32]"
+                                    : "text-[#4A3B32]/70 hover:text-[#4A3B32]"
+                                }`}
+                              >
+                                CREDIT
+                              </button>
+                            </div>
+                            {/* Sliding indicator */}
+                            <div
+                              className="absolute bottom-0 h-0.5 bg-[#4A3B32] transition-transform duration-300 ease-in-out"
+                              style={{
+                                width: "33.333%",
+                                transform:
+                                  accountTab === "E-WALLET"
+                                    ? "translateX(100%)"
+                                    : accountTab === "CREDIT"
+                                    ? "translateX(200%)"
+                                    : "translateX(0)",
+                              }}
+                            />
+                          </div>
+
+                          {/* Tab Content - Accounts List */}
+                          <div className="overflow-y-auto flex-1">
+                            {accountTab === "BANK" && (
+                              <>
+                                {bankAccounts.length > 0 ? (
+                                  bankAccounts.map((account) => (
                                     <button
+                                      key={account.id}
                                       type="button"
                                       onClick={() => {
-                                        const currentTab =
-                                          activeTab as keyof typeof customSubcategories;
-                                        setCustomSubcategories((prev) => ({
-                                          ...prev,
-                                          [currentTab]: prev[currentTab].filter(
-                                            (cat) => cat !== subcat
-                                          ),
-                                        }));
-                                        setSwipedCategory(null);
-                                        if (selectedCategory === subcat) {
-                                          setValue("selectedCategory", "");
-                                        }
+                                        setSelectedAccount(account.id);
+                                        setShowAccountPopup(false);
                                       }}
-                                      className="p-2"
+                                      className={`w-full px-4 py-3 text-left hover:bg-[#FDF6EC] ${
+                                        selectedAccount === account.id
+                                          ? "bg-[#E6C288]/20 font-semibold"
+                                          : "bg-white"
+                                      }`}
                                     >
-                                      <Trash2
-                                        size={20}
-                                        className="text-white"
-                                        strokeWidth={2}
-                                      />
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-sm text-[#4A3B32]">
+                                          {account.name}
+                                        </span>
+                                        <span className="text-xs text-[#4A3B32]/60">
+                                          ₱
+                                          {account.balance.toLocaleString(
+                                            "en-PH"
+                                          )}
+                                        </span>
+                                      </div>
                                     </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-8 text-center text-sm text-[#4A3B32]/60">
+                                    No bank accounts available
                                   </div>
                                 )}
+                              </>
+                            )}
 
-                                {/* Category button */}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (isSwiped) {
-                                      setSwipedCategory(null);
-                                    } else {
-                                      setValue("selectedCategory", subcat);
-                                      setShowCategoryPopup(false);
-                                      setShowCustomCategoryInput(false);
-                                      setCustomCategory("");
-                                      setSwipedCategory(null);
-                                    }
-                                  }}
-                                  onMouseDown={(e) => {
-                                    if (isCustom) {
-                                      e.preventDefault();
-                                      setTouchStart(e.clientX);
-                                    }
-                                  }}
-                                  onMouseMove={(e) => {
-                                    if (
-                                      isCustom &&
-                                      touchStart !== null &&
-                                      e.buttons === 1
-                                    ) {
-                                      e.preventDefault();
-                                      setTouchEnd(e.clientX);
-                                    }
-                                  }}
-                                  onMouseUp={(e) => {
-                                    if (
-                                      isCustom &&
-                                      touchStart !== null &&
-                                      touchEnd !== null
-                                    ) {
-                                      e.preventDefault();
-                                      const swipeDistance =
-                                        touchStart - touchEnd;
-                                      if (swipeDistance > 50) {
-                                        // Swiped left
-                                        setSwipedCategory(subcat);
-                                      } else if (swipeDistance < -50) {
-                                        // Swiped right
-                                        setSwipedCategory(null);
-                                      }
-                                      setTouchStart(null);
-                                      setTouchEnd(null);
-                                    }
-                                  }}
-                                  onMouseLeave={() => {
-                                    if (isCustom) {
-                                      setTouchStart(null);
-                                      setTouchEnd(null);
-                                    }
-                                  }}
-                                  onTouchStart={(e) => {
-                                    if (isCustom) {
-                                      setTouchStart(e.touches[0].clientX);
-                                    }
-                                  }}
-                                  onTouchMove={(e) => {
-                                    if (isCustom) {
-                                      setTouchEnd(e.touches[0].clientX);
-                                    }
-                                  }}
-                                  onTouchEnd={() => {
-                                    if (
-                                      isCustom &&
-                                      touchStart !== null &&
-                                      touchEnd !== null
-                                    ) {
-                                      const swipeDistance =
-                                        touchStart - touchEnd;
-                                      if (swipeDistance > 50) {
-                                        // Swiped left
-                                        setSwipedCategory(subcat);
-                                      } else if (swipeDistance < -50) {
-                                        // Swiped right
-                                        setSwipedCategory(null);
-                                      }
-                                      setTouchStart(null);
-                                      setTouchEnd(null);
-                                    }
-                                  }}
-                                  title={
-                                    isCustom
-                                      ? "Swipe left to delete this custom category"
-                                      : undefined
-                                  }
-                                  style={{
-                                    transform: isSwiped
-                                      ? "translateX(-80px)"
-                                      : "translateX(0)",
-                                    transition:
-                                      "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                                  }}
-                                  className={`group relative w-full px-4 py-3 text-left hover:bg-[#FDF6EC] ${
-                                    selectedCategory === subcat
-                                      ? "bg-[#E6C288]/20 font-semibold"
-                                      : "bg-white"
-                                  }`}
-                                >
-                                  <span className="text-sm text-[#4A3B32]">
-                                    {subcat}
-                                  </span>
-                                </button>
-                              </div>
-                            );
-                          })}
+                            {accountTab === "E-WALLET" && (
+                              <>
+                                {ewalletAccounts.length > 0 ? (
+                                  ewalletAccounts.map((account) => (
+                                    <button
+                                      key={account.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedAccount(account.id);
+                                        setShowAccountPopup(false);
+                                      }}
+                                      className={`w-full px-4 py-3 text-left hover:bg-[#FDF6EC] ${
+                                        selectedAccount === account.id
+                                          ? "bg-[#E6C288]/20 font-semibold"
+                                          : "bg-white"
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-sm text-[#4A3B32]">
+                                          {account.name}
+                                        </span>
+                                        <span className="text-xs text-[#4A3B32]/60">
+                                          ₱
+                                          {account.balance.toLocaleString(
+                                            "en-PH"
+                                          )}
+                                        </span>
+                                      </div>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-8 text-center text-sm text-[#4A3B32]/60">
+                                    No e-wallet accounts available
+                                  </div>
+                                )}
+                              </>
+                            )}
 
-                          {/* Add Category Button */}
-                          {!showCustomCategoryInput ? (
-                            <button
-                              type="button"
-                              onClick={() => setShowCustomCategoryInput(true)}
-                              className="w-full px-4 py-3 text-left hover:bg-[#FDF6EC] transition-colors border-t border-[#E6C288]/50"
-                            >
-                              <span className="text-sm text-[#4A3B32]/60 font-medium">
-                                + Add Category
-                              </span>
-                            </button>
-                          ) : (
-                            <div className="px-4 py-3 border-t border-[#E6C288]/50">
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={customCategory}
-                                  onChange={(e) =>
-                                    setCustomCategory(e.target.value)
-                                  }
-                                  placeholder="Enter category name"
-                                  className="flex-1 px-3 py-2 text-sm text-[#4A3B32] bg-white rounded-lg border border-[#E6C288] focus:border-[#4A3B32] focus:outline-none"
-                                  autoFocus
-                                  onKeyDown={(e) => {
-                                    if (
-                                      e.key === "Enter" &&
-                                      customCategory.trim()
-                                    ) {
-                                      const newCategory = customCategory.trim();
-                                      const currentTab =
-                                        activeTab as keyof typeof customSubcategories;
-
-                                      // Add to custom subcategories if not already exists
-                                      if (
-                                        !subcategories[currentTab].includes(
-                                          newCategory
-                                        )
-                                      ) {
-                                        setCustomSubcategories((prev) => ({
-                                          ...prev,
-                                          [currentTab]: [
-                                            ...prev[currentTab],
-                                            newCategory,
-                                          ],
-                                        }));
-                                      }
-
-                                      setValue("selectedCategory", newCategory);
-                                      setShowCategoryPopup(false);
-                                      setShowCustomCategoryInput(false);
-                                      setCustomCategory("");
-                                    }
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (customCategory.trim()) {
-                                      const newCategory = customCategory.trim();
-                                      const currentTab =
-                                        activeTab as keyof typeof customSubcategories;
-
-                                      // Add to custom subcategories if not already exists
-                                      if (
-                                        !subcategories[currentTab].includes(
-                                          newCategory
-                                        )
-                                      ) {
-                                        setCustomSubcategories((prev) => ({
-                                          ...prev,
-                                          [currentTab]: [
-                                            ...prev[currentTab],
-                                            newCategory,
-                                          ],
-                                        }));
-                                      }
-
-                                      setValue("selectedCategory", newCategory);
-                                      setShowCategoryPopup(false);
-                                      setShowCustomCategoryInput(false);
-                                      setCustomCategory("");
-                                    }
-                                  }}
-                                  disabled={!customCategory.trim()}
-                                  className="px-3 py-2 bg-[#4A3B32] text-white text-sm font-medium rounded-lg hover:bg-[#4A3B32]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                  Add
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                            {accountTab === "CREDIT" && (
+                              <>
+                                {creditCards.length > 0 ? (
+                                  creditCards.map((account) => (
+                                    <button
+                                      key={account.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedAccount(account.id);
+                                        setShowAccountPopup(false);
+                                      }}
+                                      className={`w-full px-4 py-3 text-left hover:bg-[#FDF6EC] ${
+                                        selectedAccount === account.id
+                                          ? "bg-[#E6C288]/20 font-semibold"
+                                          : "bg-white"
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-sm text-[#4A3B32]">
+                                          {account.name}
+                                        </span>
+                                        <span className="text-xs text-[#4A3B32]/60">
+                                          ₱
+                                          {(
+                                            account.creditUsed || 0
+                                          ).toLocaleString("en-PH")}{" "}
+                                          / ₱
+                                          {(
+                                            account.creditLimit || 0
+                                          ).toLocaleString("en-PH")}
+                                        </span>
+                                      </div>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-8 text-center text-sm text-[#4A3B32]/60">
+                                    No credit card accounts available
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+                    </>
+                  )}
+                </div>
+              )}
 
-            {/* Description (Optional) */}
-            <div className="card-crumbs">
-              <label
-                htmlFor="description-input"
-                className="block text-sm font-semibold text-[#4A3B32] mb-3"
-              >
-                Description (Optional)
-              </label>
-              <input
-                id="description-input"
-                type="text"
-                {...register("description")}
-                placeholder="e.g., Lunch at cafe"
-                maxLength={100}
-                className={`w-full px-4 py-3 text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 ${
-                  errors.description ? "border-[#D9534F]" : "border-[#E6C288]"
-                } focus:border-[#4A3B32] focus:outline-none`}
-                aria-invalid={!!errors.description}
-                aria-describedby={
-                  errors.description ? "description-error" : undefined
-                }
-              />
-              {errors.description && (
-                <p
-                  id="description-error"
-                  className="text-xs text-[#D9534F] mt-1"
-                  role="alert"
+              {/* Description (Optional) */}
+              <div className="card-crumbs">
+                <label
+                  htmlFor="description-input"
+                  className="block text-sm font-semibold text-[#4A3B32] mb-3"
                 >
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-
-            {/* Recurring Transaction Toggle */}
-            <div className="card-crumbs">
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <RefreshCw
-                    size={20}
-                    className="text-[#4A3B32]"
-                    strokeWidth={2}
-                  />
-                  <div>
-                    <p className="text-sm font-semibold text-[#4A3B32]">
-                      Make this recurring
-                    </p>
-                    <p className="text-xs text-[#4A3B32]/60">
-                      Automatically create this transaction regularly
-                    </p>
-                  </div>
-                </div>
+                  Description (Optional)
+                </label>
                 <input
-                  type="checkbox"
-                  {...register("isRecurring")}
-                  className="w-5 h-5 text-[#4A3B32] bg-[#FDF6EC] border-2 border-[#E6C288] rounded focus:ring-[#4A3B32] focus:ring-2"
+                  id="description-input"
+                  type="text"
+                  {...register("description")}
+                  placeholder="e.g., Lunch at cafe"
+                  maxLength={100}
+                  className={`w-full px-4 py-3 text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 ${
+                    errors.description ? "border-[#D9534F]" : "border-[#E6C288]"
+                  } focus:border-[#4A3B32] focus:outline-none`}
+                  aria-invalid={!!errors.description}
+                  aria-describedby={
+                    errors.description ? "description-error" : undefined
+                  }
                 />
-              </label>
+                {errors.description && (
+                  <p
+                    id="description-error"
+                    className="text-xs text-[#D9534F] mt-1"
+                    role="alert"
+                  >
+                    {errors.description.message}
+                  </p>
+                )}
+              </div>
 
-              {/* Recurring Options */}
-              {isRecurring && (
-                <div className="mt-4 space-y-4 pt-4 border-t border-[#E6C288]/50 animate-fade-in">
-                  {/* Frequency Selector */}
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3B32] mb-2">
-                      Frequency
-                    </label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {(
-                        [
-                          "DAILY",
-                          "WEEKLY",
-                          "MONTHLY",
-                          "YEARLY",
-                        ] as RecurringFrequency[]
-                      ).map((freq) => (
-                        <button
-                          key={freq}
-                          type="button"
-                          onClick={() => setValue("frequency", freq)}
-                          className={`py-2 px-2 text-xs font-medium rounded-lg transition-all ${
-                            frequency === freq
-                              ? "bg-[#4A3B32] text-white"
-                              : "bg-[#FDF6EC] text-[#4A3B32] border border-[#E6C288] hover:border-[#4A3B32]"
-                          }`}
-                        >
-                          {freq.charAt(0) + freq.slice(1).toLowerCase()}
-                        </button>
-                      ))}
+              {/* Recurring Transaction Toggle */}
+              <div className="card-crumbs">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <RefreshCw
+                      size={20}
+                      className="text-[#4A3B32]"
+                      strokeWidth={2}
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-[#4A3B32]">
+                        Make this recurring
+                      </p>
+                      <p className="text-xs text-[#4A3B32]/60">
+                        Automatically create this transaction regularly
+                      </p>
                     </div>
                   </div>
+                  <input
+                    type="checkbox"
+                    {...register("isRecurring")}
+                    className="w-5 h-5 text-[#4A3B32] bg-[#FDF6EC] border-2 border-[#E6C288] rounded focus:ring-[#4A3B32] focus:ring-2"
+                  />
+                </label>
 
-                  {/* Start Date */}
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3B32] mb-2">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      {...register("startDate")}
-                      min={new Date().toISOString().split("T")[0]}
-                      className="w-full px-3 py-2 text-sm text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 border-[#E6C288] focus:border-[#4A3B32] focus:outline-none"
-                    />
+                {/* Recurring Options */}
+                {isRecurring && (
+                  <div className="mt-4 space-y-4 pt-4 border-t border-[#E6C288]/50 animate-fade-in">
+                    {/* Frequency Selector */}
+                    <div>
+                      <label className="block text-xs font-semibold text-[#4A3B32] mb-2">
+                        Frequency
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {(
+                          [
+                            "DAILY",
+                            "WEEKLY",
+                            "MONTHLY",
+                            "YEARLY",
+                          ] as RecurringFrequency[]
+                        ).map((freq) => (
+                          <button
+                            key={freq}
+                            type="button"
+                            onClick={() => setValue("frequency", freq)}
+                            className={`py-2 px-2 text-xs font-medium rounded-lg transition-all ${
+                              frequency === freq
+                                ? "bg-[#4A3B32] text-white"
+                                : "bg-[#FDF6EC] text-[#4A3B32] border border-[#E6C288] hover:border-[#4A3B32]"
+                            }`}
+                          >
+                            {freq.charAt(0) + freq.slice(1).toLowerCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Start Date */}
+                    <div>
+                      <label className="block text-xs font-semibold text-[#4A3B32] mb-2">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        {...register("startDate")}
+                        min={new Date().toISOString().split("T")[0]}
+                        className="w-full px-3 py-2 text-sm text-[#4A3B32] bg-[#FDF6EC] rounded-lg border-2 border-[#E6C288] focus:border-[#4A3B32] focus:outline-none"
+                      />
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* Error Messages */}
+              {(errors.selectedCategory || errors.isRecurring) && (
+                <div
+                  className="bg-[#D9534F]/10 border border-[#D9534F] text-[#D9534F] px-4 py-3 rounded-lg text-sm space-y-1"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  {errors.selectedCategory && (
+                    <p id="category-error">{errors.selectedCategory.message}</p>
+                  )}
+                  {errors.isRecurring && <p>{errors.isRecurring.message}</p>}
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Error Messages */}
-            {(errors.selectedCategory || errors.isRecurring) && (
-              <div
-                className="bg-[#D9534F]/10 border border-[#D9534F] text-[#D9534F] px-4 py-3 rounded-lg text-sm space-y-1"
-                role="alert"
-                aria-live="polite"
-              >
-                {errors.selectedCategory && (
-                  <p id="category-error">{errors.selectedCategory.message}</p>
-                )}
-                {errors.isRecurring && <p>{errors.isRecurring.message}</p>}
-              </div>
-            )}
-
-            {/* Submit Button */}
+          {/* Sticky Submit Button */}
+          <div className="bg-[#FDF6EC] px-4 pt-4 pb-6 border-t border-[#E6C288]/30 shrink-0">
             <button
               type="submit"
               disabled={isSubmitting || loading}
@@ -894,8 +1182,8 @@ export default function AddTransactionModal({
                 ? "Create Recurring Transaction"
                 : "Add Transaction"}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );
