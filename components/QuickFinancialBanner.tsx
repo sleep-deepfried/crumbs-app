@@ -1,5 +1,10 @@
 import { formatCurrency } from "@/lib/utils";
-import { TrendingDown, DollarSign, PartyPopper, AlertTriangle } from "lucide-react";
+import {
+  TrendingDown,
+  DollarSign,
+  PartyPopper,
+  AlertTriangle,
+} from "lucide-react";
 import { Transaction } from "@/types";
 
 interface QuickFinancialBannerProps {
@@ -128,9 +133,15 @@ export default function QuickFinancialBanner({
       >
         <p className="text-xs font-semibold flex items-center justify-center gap-1">
           {isOnTrack ? (
-            <><PartyPopper size={14} /> You&apos;re on track! Keep up the great work</>
+            <>
+              <PartyPopper size={14} /> You&apos;re on track! Keep up the great
+              work
+            </>
           ) : (
-            <><AlertTriangle size={14} /> Spending faster than planned, consider slowing down</>
+            <>
+              <AlertTriangle size={14} /> Spending faster than planned, consider
+              slowing down
+            </>
           )}
         </p>
       </div>

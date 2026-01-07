@@ -264,7 +264,8 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
               <p className="text-xs text-[#4A3B32]/60">Total Expenses</p>
             </div>
             <p className="text-2xl font-bold text-[#C74444]">
-              ₱{filteredTransactions
+              ₱
+              {filteredTransactions
                 .filter((t) => t.type === "EXPENSE")
                 .reduce((sum, t) => sum + t.amount, 0)
                 .toLocaleString()}
@@ -276,7 +277,8 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
               <p className="text-xs text-[#4A3B32]/60">Total Income</p>
             </div>
             <p className="text-2xl font-bold text-[#4A7C59]">
-              ₱{filteredTransactions
+              ₱
+              {filteredTransactions
                 .filter((t) => t.type === "INCOME")
                 .reduce((sum, t) => sum + t.amount, 0)
                 .toLocaleString()}

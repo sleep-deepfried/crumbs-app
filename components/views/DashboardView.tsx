@@ -18,7 +18,7 @@ export default function DashboardView({
   onTabChange,
 }: DashboardViewProps) {
   const [showAllTransactions, setShowAllTransactions] = useState(false);
-  
+
   const {
     user,
     monthlyExpenses,
@@ -134,7 +134,9 @@ export default function DashboardView({
           >
             {/* Modal Header */}
             <div className="bg-white px-6 py-4 border-b border-[#E6C288]/30 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#4A3B32]">All Transactions</h2>
+              <h2 className="text-lg font-bold text-[#4A3B32]">
+                All Transactions
+              </h2>
               <button
                 onClick={() => setShowAllTransactions(false)}
                 className="p-1 hover:bg-[#E6C288]/20 rounded-full transition-colors"

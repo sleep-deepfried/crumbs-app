@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, TrendingUp, AlertCircle, CheckCircle, Home, ShoppingBag, PiggyBank } from "lucide-react";
+import {
+  Settings,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+  Home,
+  ShoppingBag,
+  PiggyBank,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Transaction } from "@/types";
 
