@@ -46,10 +46,12 @@ This guide will help you set up Google OAuth and Magic Link (passwordless email)
    https://your-production-domain.com
    ```
 4. Authorized redirect URIs:
+
    ```
    https://[YOUR-PROJECT-REF].supabase.co/auth/v1/callback
    http://localhost:3000/auth/callback
    ```
+
    Replace `[YOUR-PROJECT-REF]` with your actual Supabase project reference (found in your Supabase project URL)
 
 5. Click **Create**
@@ -76,6 +78,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key-here"
 ## 5. Testing the Authentication
 
 ### Test Magic Link (Email):
+
 1. Start your development server: `npm run dev`
 2. Go to http://localhost:3000/auth/login
 3. Enter your email and click "Continue with email"
@@ -83,6 +86,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key-here"
 5. Click the link to sign in
 
 ### Test Google OAuth:
+
 1. On the login page, click "Continue with Google"
 2. Select your Google account
 3. Authorize the app
@@ -93,10 +97,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key-here"
 When deploying to production (e.g., Vercel):
 
 1. Add your production domain to Google OAuth:
+
    - Authorized JavaScript origins: `https://your-domain.com`
    - Authorized redirect URIs: `https://[YOUR-PROJECT-REF].supabase.co/auth/v1/callback`
 
 2. Update Supabase Site URL:
+
    - Go to **Authentication** → **URL Configuration**
    - Set **Site URL** to your production domain
    - Add your production domain to **Redirect URLs**
@@ -108,18 +114,21 @@ When deploying to production (e.g., Vercel):
 ## Troubleshooting
 
 ### Magic Link Not Working
+
 - Check that email provider is enabled in Supabase
 - Verify email templates are configured
 - Check spam folder
 - Ensure `emailRedirectTo` in code matches your allowed redirect URLs
 
 ### Google OAuth Errors
+
 - Verify Client ID and Secret are correct
 - Check redirect URIs match exactly (including http vs https)
 - Ensure OAuth consent screen is published (not in testing mode for production)
 - Check that Google+ API is enabled in Google Cloud Console
 
 ### User Profile Not Created
+
 - Check browser console for errors
 - Verify Prisma schema matches user creation in `createUserProfile`
 - Check database logs in Supabase

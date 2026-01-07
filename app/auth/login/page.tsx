@@ -15,9 +15,9 @@ export default function LoginPage() {
     setError(null);
     const emailValue = formData.get("email") as string;
     setEmail(emailValue);
-    
+
     const result = await signInWithEmail(formData);
-    
+
     if (result?.error) {
       setError(result.error);
       setLoading(false);
@@ -46,7 +46,8 @@ export default function LoginPage() {
               We&apos;ve sent a magic link to <strong>{email}</strong>
             </p>
             <p className="text-sm text-[#4A3B32]/60 mb-6">
-              Click the link in the email to sign in. The link will expire in 1 hour.
+              Click the link in the email to sign in. The link will expire in 1
+              hour.
             </p>
             <button
               onClick={() => {
