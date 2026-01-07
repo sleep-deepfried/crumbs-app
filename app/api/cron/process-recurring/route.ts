@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma'
 import { addTransaction } from '@/app/actions/transactions'
 import { addDays, addWeeks, addMonths, addYears, startOfDay, isAfter } from 'date-fns'
 
-export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 // Verify the request is from Vercel Cron
