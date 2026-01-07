@@ -51,7 +51,15 @@ export async function getDashboardData() {
     return null
   }
 
-  const transactions = await getUserTransactions(user.id)
+  // Get current month transactions
+  let transactions = await getUserTransactions(user.id)
+  
+  // Get ALL transactions for analytics
+  const allTimeTransactions = await prisma.transaction.findMany({
+    where: { userId: user.id },
+    orderBy: { date: 'desc' },
+  })
+  
   const monthlyExpenses = calculateMonthlyExpenses(transactions)
   const monthlyIncome = transactions
     .filter((t: { type: string }) => t.type === 'INCOME')
@@ -127,13 +135,13 @@ export async function getDashboardData() {
     safeToSpend,
     monthlyExpenses,
     monthlyIncome,
-    recentTransactions: transactions.slice(0, 5).map(t => ({
+    recentTransactions: transactions.slice(0, 3).map(t => ({
       ...t,
       date: t.date.toISOString(),
       type: t.type as TransactionType,
       category: t.category as TransactionCategory,
     })),
-    allTransactions: transactions.map(t => ({
+    allTransactions: allTimeTransactions.map(t => ({
       ...t,
       date: t.date.toISOString(),
       type: t.type as TransactionType,

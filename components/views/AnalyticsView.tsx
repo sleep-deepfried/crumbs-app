@@ -1,88 +1,121 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from 'react'
-import { Lightbulb, ChevronDown, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import SpendingTrendsChart from '@/components/charts/SpendingTrendsChart'
-import CategoryBreakdownChart from '@/components/charts/CategoryBreakdownChart'
-import MonthlyComparisonChart from '@/components/charts/MonthlyComparisonChart'
-import SpendingByDayChart from '@/components/charts/SpendingByDayChart'
-import AIInsights from '@/components/AIInsights'
-import RecurringTransactionsSummary from '@/components/RecurringTransactionsSummary'
+import { useState, useMemo } from "react";
 import {
-  getSpendingTrends,
+  ChevronDown,
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import CategoryBreakdownChart from "@/components/charts/CategoryBreakdownChart";
+import MonthlyComparisonChart from "@/components/charts/MonthlyComparisonChart";
+import SpendingByDayChart from "@/components/charts/SpendingByDayChart";
+import SmartBudgetPlan from "@/components/SmartBudgetPlan";
+import RecurringTransactionsSummary from "@/components/RecurringTransactionsSummary";
+import {
   getCategoryBreakdown,
-  calculateInsights,
-  detectUnusualSpending,
   getMonthlyComparison,
   getSpendingByDayOfWeek,
-  detectCategoryAlerts,
-  calculateSavingsOpportunities,
-} from '@/lib/analyticsHelpers'
-import { Transaction, RecurringTransaction } from '@/types'
+} from "@/lib/analyticsHelpers";
+import { Transaction, RecurringTransaction } from "@/types";
 
 interface AnalyticsViewProps {
   data: {
     user: {
-      username: string
-      spendingLimit?: number
-      totalSaved?: number
-      currentStreak?: number
-    }
-    allTransactions: Transaction[]
-    recurringTransactions?: RecurringTransaction[]
-  }
+      username: string;
+      spendingLimit?: number;
+      totalSaved?: number;
+      currentStreak?: number;
+    };
+    allTransactions: Transaction[];
+    recurringTransactions?: RecurringTransaction[];
+    monthlyIncome: number;
+  };
 }
 
 export default function AnalyticsView({ data }: AnalyticsViewProps) {
-  const { user, allTransactions, recurringTransactions = [] } = data
+  const {
+    user,
+    allTransactions,
+    recurringTransactions = [],
+    monthlyIncome,
+  } = data;
 
   // Date range state
-  const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'all'>('month')
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [showCalendar, setShowCalendar] = useState(false)
-  const [calendarYear, setCalendarYear] = useState<number>(new Date().getFullYear())
-
+  const [selectedPeriod, setSelectedPeriod] = useState<"month" | "all">(
+    "month"
+  );
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarYear, setCalendarYear] = useState<number>(
+    new Date().getFullYear()
+  );
+  const [selectedWeek, setSelectedWeek] = useState<number | undefined>(
+    undefined
+  );
 
   // Calculate date range
   const { startDate, endDate } = useMemo(() => {
-    const now = new Date()
-    
-    if (selectedPeriod === 'month') {
-      const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
-      const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0)
-      return { startDate: start, endDate: end > now ? now : end }
+    const now = new Date();
+
+    if (selectedPeriod === "month") {
+      const start = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        1
+      );
+      const end = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth() + 1,
+        0
+      );
+      return { startDate: start, endDate: end > now ? now : end };
     } else {
       // All time - get earliest transaction date or 6 months ago
-      const earliestDate = allTransactions.length > 0
-        ? new Date(Math.min(...allTransactions.map((t: Transaction) => new Date(t.date).getTime())))
-        : new Date(now.getFullYear(), now.getMonth() - 6, 1)
-      return { startDate: earliestDate, endDate: now }
+      const earliestDate =
+        allTransactions.length > 0
+          ? new Date(
+              Math.min(
+                ...allTransactions.map((t: Transaction) =>
+                  new Date(t.date).getTime()
+                )
+              )
+            )
+          : new Date(now.getFullYear(), now.getMonth() - 6, 1);
+      return { startDate: earliestDate, endDate: now };
     }
-  }, [selectedPeriod, selectedDate, allTransactions])
+  }, [selectedPeriod, selectedDate, allTransactions]);
 
   // Filter transactions for selected period
   const filteredTransactions = useMemo(() => {
     return allTransactions.filter((t: Transaction) => {
-      const transactionDate = new Date(t.date)
-      return transactionDate >= startDate && transactionDate <= endDate
-    })
-  }, [allTransactions, startDate, endDate])
+      const transactionDate = new Date(t.date);
+      return transactionDate >= startDate && transactionDate <= endDate;
+    });
+  }, [allTransactions, startDate, endDate]);
 
   // Get chart data
-  const spendingTrends = getSpendingTrends(filteredTransactions, startDate, endDate)
-  const categoryBreakdown = getCategoryBreakdown(filteredTransactions, selectedPeriod)
-  const monthlyComparison = getMonthlyComparison(allTransactions)
-  const spendingByDay = getSpendingByDayOfWeek(allTransactions)
-  const ruleBasedInsights = calculateInsights(allTransactions, user)
-  const unusualSpending = detectUnusualSpending(allTransactions)
-  const categoryAlerts = detectCategoryAlerts(allTransactions)
-  const savingsOpportunities = calculateSavingsOpportunities(allTransactions)
+  const categoryBreakdown = getCategoryBreakdown(
+    filteredTransactions,
+    selectedPeriod
+  );
+  const monthlyComparison = getMonthlyComparison(filteredTransactions);
+  const spendingByDay = useMemo(
+    () => getSpendingByDayOfWeek(filteredTransactions, selectedWeek),
+    [filteredTransactions, selectedWeek]
+  );
 
   // Format selected date for display
-  const selectedDateLabel = selectedPeriod === 'all' 
-    ? 'All Time'
-    : selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const selectedDateLabel =
+    selectedPeriod === "all"
+      ? "All Time"
+      : selectedDate.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
 
   return (
     <div className="min-h-screen bg-[#FDF6EC] pb-24">
@@ -100,9 +133,9 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
             <Button
               onClick={() => {
                 if (!showCalendar) {
-                  setCalendarYear(selectedDate.getFullYear())
+                  setCalendarYear(selectedDate.getFullYear());
                 }
-                setShowCalendar(!showCalendar)
+                setShowCalendar(!showCalendar);
               }}
               variant="outline"
               className="flex-1 px-4 py-3 rounded-xl border-2 border-[#E6C288] bg-white text-[#4A3B32] font-semibold flex items-center justify-between hover:border-[#4A3B32] transition-colors"
@@ -111,12 +144,16 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
                 <CalendarIcon size={18} />
                 <span>{selectedDateLabel}</span>
               </div>
-              <ChevronDown 
-                size={20} 
-                className={`transition-transform ${showCalendar ? 'rotate-180' : ''}`}
+              <ChevronDown
+                size={20}
+                className={`transition-transform ${
+                  showCalendar ? "rotate-180" : ""
+                }`}
               />
             </Button>
           </div>
+
+          {/* Calendar Popup - keeping existing calendar code */}
 
           {/* Calendar Popup */}
           {showCalendar && (
@@ -129,11 +166,13 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
                 {/* All Time Option */}
                 <button
                   onClick={() => {
-                    setSelectedPeriod('all')
-                    setShowCalendar(false)
+                    setSelectedPeriod("all");
+                    setShowCalendar(false);
                   }}
                   className={`w-full px-4 py-3 text-left hover:bg-[#FDF6EC] transition-colors border-b border-[#E6C288]/30 ${
-                    selectedPeriod === 'all' ? 'bg-[#E6C288]/20 font-semibold' : ''
+                    selectedPeriod === "all"
+                      ? "bg-[#E6C288]/20 font-semibold"
+                      : ""
                   }`}
                 >
                   <span className="text-sm text-[#4A3B32]">All Time</span>
@@ -159,9 +198,13 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
                       disabled={calendarYear >= new Date().getFullYear()}
                       aria-label="Next year"
                     >
-                      <ChevronRight 
-                        size={20} 
-                        className={`${calendarYear >= new Date().getFullYear() ? 'text-[#4A3B32]/30' : 'text-[#4A3B32]'}`}
+                      <ChevronRight
+                        size={20}
+                        className={`${
+                          calendarYear >= new Date().getFullYear()
+                            ? "text-[#4A3B32]/30"
+                            : "text-[#4A3B32]"
+                        }`}
                       />
                     </button>
                   </div>
@@ -169,32 +212,42 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
                   {/* Month Grid */}
                   <div className="grid grid-cols-4 gap-2">
                     {[
-                      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                      "Jan",
+                      "Feb",
+                      "Mar",
+                      "Apr",
+                      "May",
+                      "Jun",
+                      "Jul",
+                      "Aug",
+                      "Sep",
+                      "Oct",
+                      "Nov",
+                      "Dec",
                     ].map((month, index) => {
-                      const isSelected = 
-                        selectedPeriod === 'month' &&
+                      const isSelected =
+                        selectedPeriod === "month" &&
                         selectedDate.getMonth() === index &&
-                        selectedDate.getFullYear() === calendarYear
-                      
+                        selectedDate.getFullYear() === calendarYear;
+
                       return (
                         <button
                           key={index}
                           onClick={() => {
-                            const newDate = new Date(calendarYear, index, 1)
-                            setSelectedDate(newDate)
-                            setSelectedPeriod('month')
-                            setShowCalendar(false)
+                            const newDate = new Date(calendarYear, index, 1);
+                            setSelectedDate(newDate);
+                            setSelectedPeriod("month");
+                            setShowCalendar(false);
                           }}
                           className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                             isSelected
-                              ? 'bg-[#4A7C59] text-white'
-                              : 'bg-white text-[#4A3B32] hover:bg-[#E6C288]/20 border border-[#E6C288]/30'
+                              ? "bg-[#4A7C59] text-white"
+                              : "bg-white text-[#4A3B32] hover:bg-[#E6C288]/20 border border-[#E6C288]/30"
                           }`}
                         >
                           {month}
                         </button>
-                      )
+                      );
                     })}
                   </div>
                 </div>
@@ -203,10 +256,47 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
           )}
         </div>
 
-        {/* Category Breakdown Chart */}
+        {/* Quick Stats Summary */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="card-crumbs p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingDown size={18} className="text-[#C74444]" />
+              <p className="text-xs text-[#4A3B32]/60">Total Expenses</p>
+            </div>
+            <p className="text-2xl font-bold text-[#C74444]">
+              ₱{filteredTransactions
+                .filter((t) => t.type === "EXPENSE")
+                .reduce((sum, t) => sum + t.amount, 0)
+                .toLocaleString()}
+            </p>
+          </div>
+          <div className="card-crumbs p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={18} className="text-[#4A7C59]" />
+              <p className="text-xs text-[#4A3B32]/60">Total Income</p>
+            </div>
+            <p className="text-2xl font-bold text-[#4A7C59]">
+              ₱{filteredTransactions
+                .filter((t) => t.type === "INCOME")
+                .reduce((sum, t) => sum + t.amount, 0)
+                .toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Category Breakdown Chart - Most Important */}
         <div className="card-crumbs mb-6">
           <h2 className="section-heading mb-4">Category Breakdown</h2>
           <CategoryBreakdownChart data={categoryBreakdown} />
+        </div>
+
+        {/* Spending by Day of Week Chart */}
+        <div className="card-crumbs mb-6">
+          <h2 className="section-heading mb-4">Spending by Day</h2>
+          <SpendingByDayChart
+            data={spendingByDay}
+            onWeekChange={setSelectedWeek}
+          />
         </div>
 
         {/* Monthly Comparison Chart */}
@@ -215,94 +305,20 @@ export default function AnalyticsView({ data }: AnalyticsViewProps) {
           <MonthlyComparisonChart data={monthlyComparison} />
         </div>
 
-        {/* Spending by Day of Week Chart */}
-        <div className="card-crumbs mb-6">
-          <h2 className="section-heading mb-4">Spending by Day of Week</h2>
-          <SpendingByDayChart data={spendingByDay} />
-        </div>
-
-        {/* Spending Trends Chart */}
-        <div className="card-crumbs mb-6">
-          <h2 className="section-heading mb-4">Spending Trends</h2>
-          <SpendingTrendsChart data={spendingTrends} />
-        </div>
+        {/* Smart Budget Plan */}
+        <SmartBudgetPlan
+          transactions={allTransactions}
+          monthlyIncome={monthlyIncome}
+          user={user}
+        />
 
         {/* Recurring Transactions Summary */}
         {recurringTransactions.length > 0 && (
-          <RecurringTransactionsSummary recurringTransactions={recurringTransactions} />
+          <RecurringTransactionsSummary
+            recurringTransactions={recurringTransactions}
+          />
         )}
-
-        {/* AI Insights */}
-        <AIInsights transactions={allTransactions} user={user} />
-
-        {/* Rule-Based Insights */}
-        {(ruleBasedInsights.length > 0 || 
-          unusualSpending.length > 0 || 
-          categoryAlerts.length > 0 || 
-          savingsOpportunities.length > 0) && (
-          <div className="card-crumbs">
-            <div className="flex items-center gap-2 mb-3">
-              <Lightbulb size={20} className="text-[#4A3B32]" strokeWidth={2} />
-              <h2 className="section-heading">Insights</h2>
-            </div>
-            <div className="space-y-2">
-              {ruleBasedInsights.map((insight, index) => (
-                <p
-                  key={`rule-${index}`}
-                  className={`text-sm ${
-                    insight.type === 'positive'
-                      ? 'text-[#4A7C59]'
-                      : insight.type === 'warning'
-                      ? 'text-[#C74444]'
-                      : 'text-[#4A3B32]'
-                  }`}
-                >
-                  {insight.emoji && <span className="mr-1">{insight.emoji}</span>}
-                  {insight.message}
-                </p>
-              ))}
-              {unusualSpending.map((insight, index) => (
-                <p
-                  key={`unusual-${index}`}
-                  className="text-sm text-[#C74444]"
-                >
-                  {insight.emoji && <span className="mr-1">{insight.emoji}</span>}
-                  {insight.message}
-                </p>
-              ))}
-              {categoryAlerts.map((alert, index) => (
-                <p
-                  key={`category-alert-${index}`}
-                  className="text-sm text-[#C74444]"
-                >
-                  ⚠️ {alert.message}
-                </p>
-              ))}
-              {savingsOpportunities.map((opportunity, index) => (
-                <p
-                  key={`savings-${index}`}
-                  className="text-sm text-[#4A7C59]"
-                >
-                  💰 {opportunity.message}
-                </p>
-              ))}
-              {user.currentStreak && user.currentStreak >= 7 && (
-                <p className="text-sm text-[#4A3B32]">
-                  • {user.currentStreak} day streak - You&apos;re on fire! 🔥
-                </p>
-              )}
-              {user.totalSaved && user.totalSaved >= 50000 && (
-                <p className="text-sm text-[#4A3B32]">
-                  • Great savings milestone reached! Keep it up! 💪
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Bottom spacing */}
-        <div className="h-8" />
       </main>
     </div>
-  )
+  );
 }

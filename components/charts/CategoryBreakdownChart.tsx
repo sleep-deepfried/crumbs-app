@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CategoryBreakdown } from "@/lib/analyticsHelpers";
 import {
   ChartConfig,
@@ -8,6 +9,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Cell, Pie, PieChart } from "recharts";
+import CategoryDetailModal from "@/components/CategoryDetailModal";
 
 interface CategoryBreakdownChartProps {
   data: CategoryBreakdown[];
@@ -42,6 +44,9 @@ const chartConfig = {
 export default function CategoryBreakdownChart({
   data,
 }: CategoryBreakdownChartProps) {
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryBreakdown | null>(null);
+
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-[#4A3B32]/60">
@@ -50,54 +55,69 @@ export default function CategoryBreakdownChart({
     );
   }
 
-  const total = data.reduce((sum, item) => sum + item.amount, 0);
-
   const chartData = data.map((item) => ({
     name: item.category,
     value: item.amount,
     percentage: item.percentage,
   }));
 
+  const handlePieClick = (entry: { name: string }) => {
+    const category = data.find((d) => d.category === entry.name);
+    if (category) {
+      setSelectedCategory(category);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <ChartContainer config={chartConfig} className="h-64 w-full">
-        <PieChart>
-          <ChartTooltip
-            content={
-              <ChartTooltipContent
-                formatter={(value, name, props) => {
-                  const percentage = props?.payload?.percentage ?? 0;
-                  return [
-                    `₱${
-                      typeof value === "number" ? value.toLocaleString() : value
-                    } (${percentage.toFixed(1)}%)`,
-                    name,
-                  ];
-                }}
-              />
-            }
-          />
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ name, percentage }) =>
-              `${name}: ${percentage.toFixed(0)}%`
-            }
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {chartData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[entry.name as keyof typeof COLORS] || COLORS.OTHER}
-              />
-            ))}
-          </Pie>
-        </PieChart>
-      </ChartContainer>
+      <div className="relative">
+        <ChartContainer config={chartConfig} className="h-64 w-full">
+          <PieChart>
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value, name, props) => {
+                    const percentage = props?.payload?.percentage ?? 0;
+                    return [
+                      `₱${
+                        typeof value === "number"
+                          ? value.toLocaleString()
+                          : value
+                      } (${percentage.toFixed(1)}%)`,
+                      name,
+                    ];
+                  }}
+                />
+              }
+            />
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, percentage }) =>
+                `${name}: ${percentage.toFixed(0)}%`
+              }
+              innerRadius={50}
+              outerRadius={90}
+              fill="#8884d8"
+              dataKey="value"
+              onClick={handlePieClick}
+              className="cursor-pointer"
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={
+                    COLORS[entry.name as keyof typeof COLORS] || COLORS.OTHER
+                  }
+                  className="hover:opacity-80 transition-opacity"
+                />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+      </div>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4 justify-center">
@@ -117,13 +137,16 @@ export default function CategoryBreakdownChart({
         ))}
       </div>
 
-      {/* Total */}
-      <div className="text-center pt-2">
-        <p className="text-xs text-[#4A3B32]/60">Total Expenses</p>
-        <p className="text-lg font-bold text-[#4A3B32]">
-          ₱{total.toLocaleString()}
-        </p>
+      {/* Hint */}
+      <div className="text-center text-xs text-[#4A3B32]/50 mt-2">
+        Click on any category to see detailed breakdown
       </div>
+
+      {/* Modal */}
+      <CategoryDetailModal
+        category={selectedCategory}
+        onClose={() => setSelectedCategory(null)}
+      />
     </div>
   );
 }

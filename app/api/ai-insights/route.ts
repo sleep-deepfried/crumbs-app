@@ -12,11 +12,30 @@ export async function POST(request: NextRequest) {
   try {
     const { transactions, user } = await request.json()
 
+    // If no transactions, return empty insights
+    if (!transactions || transactions.length === 0) {
+      return NextResponse.json({
+        insights: [
+          {
+            type: "info",
+            message: "Start tracking your expenses to get personalized insights",
+            emoji: "📊"
+          }
+        ]
+      })
+    }
+
     if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json(
-        { error: "Gemini API key not configured" },
-        { status: 500 }
-      )
+      console.error("GEMINI_API_KEY not configured")
+      return NextResponse.json({
+        insights: [
+          {
+            type: "info",
+            message: "AI insights are temporarily unavailable",
+            emoji: "💡"
+          }
+        ]
+      })
     }
 
     const ai = new GoogleGenAI({
@@ -129,7 +148,7 @@ Format as JSON array:
 }`
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       contents: prompt,
     })
 
@@ -164,11 +183,17 @@ Format as JSON array:
 
     return NextResponse.json(insights)
   } catch (error) {
-    console.error("Gemini API error:", error)
-    return NextResponse.json(
-      { error: "Failed to generate insights", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    )
+    console.error("AI Insights error:", error)
+    // Return graceful fallback instead of 500 error
+    return NextResponse.json({
+      insights: [
+        {
+          type: "info",
+          message: "Unable to generate insights at this time",
+          emoji: "ℹ️"
+        }
+      ]
+    })
   }
 }
 

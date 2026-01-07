@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Trophy } from "lucide-react";
+import { Trophy, PartyPopper } from "lucide-react";
 
 interface GoalCelebrationProps {
   isOpen: boolean;
@@ -69,7 +69,9 @@ export default function GoalCelebration({
           <Trophy size={64} className="mx-auto text-[#E6C288]" />
         </div>
 
-        <h2 className="text-2xl font-bold mb-2">Goal Achieved! 🎉</h2>
+        <h2 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">
+          Goal Achieved! <PartyPopper size={24} />
+        </h2>
 
         <p className="text-white/90 mb-6">
           You&apos;ve reached your savings goal for{" "}

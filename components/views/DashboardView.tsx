@@ -2,8 +2,10 @@ import CommunityTable from "@/components/CommunityTable";
 import MetricsGrid from "@/components/MetricsGrid";
 import RecurringTransactionsList from "@/components/RecurringTransactionsList";
 import DashboardHeader from "@/components/DashboardHeader";
-import SpendingChart from "@/components/SpendingChart";
+import QuickFinancialBanner from "@/components/QuickFinancialBanner";
 import RecentTransactionsList from "@/components/RecentTransactionsList";
+import { useState } from "react";
+import { X } from "lucide-react";
 
 interface DashboardViewProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,6 +17,8 @@ export default function DashboardView({
   data,
   onTabChange,
 }: DashboardViewProps) {
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  
   const {
     user,
     monthlyExpenses,
@@ -49,9 +53,14 @@ export default function DashboardView({
           totalIncome={monthlyIncome}
         />
 
-        {/* Spending Chart Component */}
+        {/* Quick Financial Banner */}
         <section className="mt-4 px-4">
-          <SpendingChart transactions={recentTransactions} />
+          <QuickFinancialBanner
+            monthlyIncome={monthlyIncome}
+            monthlyExpenses={monthlyExpenses}
+            spendingLimit={user.spendingLimit}
+            transactions={recentTransactions}
+          />
         </section>
 
         {/* Recent Transactions */}
@@ -64,9 +73,9 @@ export default function DashboardView({
               Recent Transactions
             </h3>
             <button
-              onClick={() => onTabChange("analytics")}
+              onClick={() => setShowAllTransactions(true)}
               className="text-xs text-[#4A3B32]/60 hover:text-[#4A3B32]"
-              aria-label="View all transactions in analytics"
+              aria-label="View all transactions"
             >
               View All
             </button>
@@ -112,6 +121,36 @@ export default function DashboardView({
         {/* Bottom spacing for nav */}
         <div className="h-8" />
       </main>
+
+      {/* All Transactions Modal */}
+      {showAllTransactions && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setShowAllTransactions(false)}
+        >
+          <div
+            className="bg-white w-full max-w-md max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-white px-6 py-4 border-b border-[#E6C288]/30 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[#4A3B32]">All Transactions</h2>
+              <button
+                onClick={() => setShowAllTransactions(false)}
+                className="p-1 hover:bg-[#E6C288]/20 rounded-full transition-colors"
+                aria-label="Close modal"
+              >
+                <X size={20} className="text-[#4A3B32]" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="overflow-y-auto max-h-[calc(80vh-80px)] p-4 bg-[#FDF6EC]">
+              <RecentTransactionsList transactions={data.allTransactions} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { Medal, Award, Trophy, Flame, Sparkles } from 'lucide-react';
+
 interface StreakBoardProps {
   streak: number
 }
@@ -5,9 +7,9 @@ interface StreakBoardProps {
 export default function StreakBoard({ streak }: StreakBoardProps) {
   // Calculate milestone progress
   const milestones = [
-    { days: 7, label: 'Week', emoji: '🥉', achieved: streak >= 7 },
-    { days: 30, label: 'Month', emoji: '🥈', achieved: streak >= 30 },
-    { days: 100, label: 'Century', emoji: '🥇', achieved: streak >= 100 },
+    { days: 7, label: 'Week', icon: Medal, color: '#CD7F32', achieved: streak >= 7 },
+    { days: 30, label: 'Month', icon: Award, color: '#C0C0C0', achieved: streak >= 30 },
+    { days: 100, label: 'Century', icon: Trophy, color: '#FFD700', achieved: streak >= 100 },
   ]
 
   const nextMilestone = milestones.find(m => !m.achieved)
@@ -32,34 +34,34 @@ export default function StreakBoard({ streak }: StreakBoardProps) {
           {milestones.map((milestone) => (
             <div
               key={milestone.days}
-              className={`text-lg transition-all ${
+              className={`transition-all ${
                 milestone.achieved 
                   ? 'opacity-100 scale-110' 
                   : 'opacity-30 grayscale'
               }`}
               title={`${milestone.days} days - ${milestone.label}`}
             >
-              {milestone.emoji}
+              <milestone.icon size={20} style={{ color: milestone.achieved ? milestone.color : '#666' }} />
             </div>
           ))}
         </div>
 
         {/* Progress Message */}
         {streak === 0 && (
-          <div className="text-[#E6C288] text-xs">
-            Start your journey! 🌟
+          <div className="text-[#E6C288] text-xs flex items-center justify-center gap-1">
+            <Sparkles size={12} /> Start your journey!
           </div>
         )}
         
         {streak > 0 && !nextMilestone && (
-          <div className="text-[#A8D5BA] text-xs font-semibold">
-            🎉 Legendary Streak!
+          <div className="text-[#A8D5BA] text-xs font-semibold flex items-center justify-center gap-1">
+            <Trophy size={12} /> Legendary Streak!
           </div>
         )}
         
         {streak > 0 && nextMilestone && (
-          <div className="text-[#A8D5BA] text-xs">
-            🔥 {daysToNext} days to {nextMilestone.emoji}
+          <div className="text-[#A8D5BA] text-xs flex items-center justify-center gap-1">
+            <Flame size={12} /> {daysToNext} days to next milestone
           </div>
         )}
       </div>

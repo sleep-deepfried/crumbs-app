@@ -358,7 +358,8 @@ export interface DayOfWeekSpending {
  * Get spending by day of week
  */
 export function getSpendingByDayOfWeek(
-  transactions: Transaction[]
+  transactions: Transaction[],
+  weekNumber?: number // 1-based week number (1-5), undefined = all weeks
 ): DayOfWeekSpending[] {
   const now = new Date()
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -372,9 +373,20 @@ export function getSpendingByDayOfWeek(
 
   // Process expenses from current month
   transactions
-    .filter(
-      (t) => t.type === 'EXPENSE' && new Date(t.date) >= thisMonthStart && new Date(t.date) <= now
-    )
+    .filter((t) => {
+      if (t.type !== 'EXPENSE') return false
+      const date = new Date(t.date)
+      if (date < thisMonthStart || date > now) return false
+      
+      // If week filter is specified, check if transaction is in that week
+      if (weekNumber !== undefined) {
+        const dayOfMonth = date.getDate()
+        const weekOfMonth = Math.ceil(dayOfMonth / 7)
+        return weekOfMonth === weekNumber
+      }
+      
+      return true
+    })
     .forEach((t) => {
       const day = new Date(t.date).getDay()
       const current = dayTotals.get(day) || { total: 0, count: 0 }
