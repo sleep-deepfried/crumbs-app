@@ -17,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "CRUMBS - Track Your Daily Bread",
-  description: "A social, gamified personal finance tracker for high-income professionals",
+  description:
+    "A social, gamified personal finance tracker for high-income professionals",
   icons: {
     icon: "/favicon.ico",
   },
@@ -57,10 +58,10 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ToastProvider>
-        <AddTransactionProvider>
-          <InstallPrompt />
-          {children}
-        </AddTransactionProvider>
+          <AddTransactionProvider>
+            <InstallPrompt />
+            {children}
+          </AddTransactionProvider>
         </ToastProvider>
       </body>
     </html>

@@ -13,24 +13,10 @@ import {
 } from "lucide-react";
 import { useState, useRef, TouchEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { AccountCategory } from "@/types";
+import { AccountCategory, Account } from "@/types";
 import ColorPicker from "./ColorPicker";
 import CategorySelector from "./CategorySelector";
 import AccountDetailsModal from "./AccountDetailsModal";
-
-interface Account {
-  id: string;
-  name: string;
-  type: string;
-  balance: number;
-  color: string | null;
-  category: AccountCategory;
-  description: string | null;
-  icon: string | null;
-  sortOrder: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 interface AccountsListProps {
   accounts: Account[];
@@ -527,13 +513,13 @@ export default function AccountsList({
                 {/* Category Selector */}
                 <CategorySelector
                   selectedCategory={newAccountCategory}
-                  onCategoryChange={setNewAccountCategory}
+                  onSelectCategory={setNewAccountCategory}
                 />
 
                 {/* Color Picker */}
                 <ColorPicker
                   selectedColor={newAccountColor}
-                  onColorChange={setNewAccountColor}
+                  onSelectColor={setNewAccountColor}
                 />
 
                 {/* Description */}
