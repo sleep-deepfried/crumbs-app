@@ -27,17 +27,12 @@ import GoalCelebration from "@/components/GoalCelebration";
 import ColorPicker from "@/components/ColorPicker";
 
 interface WalletViewProps {
-  data: {
-    user: unknown;
-    accounts: Account[];
-    monthlyExpenses: number;
-    monthlyIncome: number;
-    [key: string]: unknown;
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
 }
 
 export default function WalletView({ data }: WalletViewProps) {
-  const { accounts } = data;
+  const { accounts, user } = data;
   const router = useRouter();
 
   const [selectedType, setSelectedType] = useState<AccountType | "ALL">("ALL");

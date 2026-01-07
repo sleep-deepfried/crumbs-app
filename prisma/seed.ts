@@ -26,7 +26,6 @@ async function main() {
       id: demoUserId,
       username: 'demo_user',
       email: 'demo@crumbs.app',
-      monthlyIncome: 69500,
       spendingLimit: 39500,
       totalSaved: 15000,
       currentStreak: 7,

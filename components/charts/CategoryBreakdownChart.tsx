@@ -65,16 +65,15 @@ export default function CategoryBreakdownChart({
           <ChartTooltip
             content={
               <ChartTooltipContent
-                formatter={(
-                  value: number,
-                  name: string,
-                  props: { payload: { percentage: number } }
-                ) => [
-                  `₱${value.toLocaleString()} (${props.payload.percentage.toFixed(
-                    1
-                  )}%)`,
-                  name,
-                ]}
+                formatter={(value, name, props) => {
+                  const percentage = props?.payload?.percentage ?? 0;
+                  return [
+                    `₱${
+                      typeof value === "number" ? value.toLocaleString() : value
+                    } (${percentage.toFixed(1)}%)`,
+                    name,
+                  ];
+                }}
               />
             }
           />

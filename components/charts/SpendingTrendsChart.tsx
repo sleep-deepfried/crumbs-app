@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { SpendingTrend } from "@/lib/analyticsHelpers"
+import { SpendingTrend } from "@/lib/analyticsHelpers";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+} from "@/components/ui/chart";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 interface SpendingTrendsChartProps {
-  data: SpendingTrend[]
+  data: SpendingTrend[];
 }
 
 const chartConfig = {
@@ -26,15 +26,17 @@ const chartConfig = {
     label: "Net",
     color: "#6B5B95",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
-export default function SpendingTrendsChart({ data }: SpendingTrendsChartProps) {
+export default function SpendingTrendsChart({
+  data,
+}: SpendingTrendsChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-[#4A3B32]/60">
         <p>No data available for this period</p>
       </div>
-    )
+    );
   }
 
   // Format dates for display (show month/day)
@@ -44,7 +46,7 @@ export default function SpendingTrendsChart({ data }: SpendingTrendsChartProps) 
       month: "short",
       day: "numeric",
     }),
-  }))
+  }));
 
   return (
     <ChartContainer config={chartConfig} className="h-64 w-full">
@@ -66,7 +68,9 @@ export default function SpendingTrendsChart({ data }: SpendingTrendsChartProps) 
         <ChartTooltip
           content={
             <ChartTooltipContent
-              formatter={(value: number) => `₱${value.toLocaleString()}`}
+              formatter={(value) =>
+                `₱${typeof value === "number" ? value.toLocaleString() : value}`
+              }
               labelFormatter={(label) => `Date: ${label}`}
             />
           }
@@ -89,6 +93,5 @@ export default function SpendingTrendsChart({ data }: SpendingTrendsChartProps) 
         />
       </LineChart>
     </ChartContainer>
-  )
+  );
 }
-

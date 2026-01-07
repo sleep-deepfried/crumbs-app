@@ -9,12 +9,8 @@ import AnalyticsView from "./views/AnalyticsView";
 import ProfileView from "./views/ProfileView";
 
 interface AppShellProps {
-  data: {
-    user: unknown;
-    accounts: unknown[];
-    recentTransactions: unknown[];
-    [key: string]: unknown;
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
 }
 
 export default function AppShell({ data }: AppShellProps) {

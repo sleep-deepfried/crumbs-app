@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { MonthlyComparison } from "@/lib/analyticsHelpers"
+import { MonthlyComparison } from "@/lib/analyticsHelpers";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+} from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 interface MonthlyComparisonChartProps {
-  data: MonthlyComparison
+  data: MonthlyComparison;
 }
 
 const chartConfig = {
@@ -22,9 +22,11 @@ const chartConfig = {
     label: "Expenses",
     color: "#4A3B32",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
-export default function MonthlyComparisonChart({ data }: MonthlyComparisonChartProps) {
+export default function MonthlyComparisonChart({
+  data,
+}: MonthlyComparisonChartProps) {
   const chartData = [
     {
       period: "Last Month",
@@ -36,12 +38,15 @@ export default function MonthlyComparisonChart({ data }: MonthlyComparisonChartP
       income: data.currentMonth.income,
       expenses: data.currentMonth.expenses,
     },
-  ]
+  ];
 
   return (
     <div className="space-y-4">
       <ChartContainer config={chartConfig} className="h-64 w-full">
-        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+        <BarChart
+          data={chartData}
+          margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#E6C288" opacity={0.3} />
           <XAxis
             dataKey="period"
@@ -56,7 +61,11 @@ export default function MonthlyComparisonChart({ data }: MonthlyComparisonChartP
           <ChartTooltip
             content={
               <ChartTooltipContent
-                formatter={(value: number) => `₱${value.toLocaleString()}`}
+                formatter={(value) =>
+                  `₱${
+                    typeof value === "number" ? value.toLocaleString() : value
+                  }`
+                }
               />
             }
           />
@@ -101,6 +110,5 @@ export default function MonthlyComparisonChart({ data }: MonthlyComparisonChartP
         </div>
       </div>
     </div>
-  )
+  );
 }
-

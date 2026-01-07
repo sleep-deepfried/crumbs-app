@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { DayOfWeekSpending } from "@/lib/analyticsHelpers"
+import { DayOfWeekSpending } from "@/lib/analyticsHelpers";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts"
+} from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
 
 interface SpendingByDayChartProps {
-  data: DayOfWeekSpending[]
+  data: DayOfWeekSpending[];
 }
 
 const chartConfig = {
@@ -18,7 +18,7 @@ const chartConfig = {
     label: "Average Spending",
     color: "#4A3B32",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export default function SpendingByDayChart({ data }: SpendingByDayChartProps) {
   if (data.length === 0 || data.every((d) => d.average === 0)) {
@@ -26,28 +26,31 @@ export default function SpendingByDayChart({ data }: SpendingByDayChartProps) {
       <div className="flex items-center justify-center h-64 text-[#4A3B32]/60">
         <p>No spending data available for this period</p>
       </div>
-    )
+    );
   }
 
   // Find best (lowest) and worst (highest) days
   const bestDay = data.reduce((min, day) =>
     day.average < min.average ? day : min
-  )
+  );
   const worstDay = data.reduce((max, day) =>
     day.average > max.average ? day : max
-  )
+  );
 
   const chartData = data.map((day) => ({
     day: day.day.slice(0, 3), // Short form: Sun, Mon, etc.
     average: day.average,
     isBest: day.dayIndex === bestDay.dayIndex,
     isWorst: day.dayIndex === worstDay.dayIndex,
-  }))
+  }));
 
   return (
     <div className="space-y-4">
       <ChartContainer config={chartConfig} className="h-64 w-full">
-        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+        <BarChart
+          data={chartData}
+          margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#E6C288" opacity={0.3} />
           <XAxis
             dataKey="day"
@@ -62,16 +65,16 @@ export default function SpendingByDayChart({ data }: SpendingByDayChartProps) {
           <ChartTooltip
             content={
               <ChartTooltipContent
-                formatter={(value: number) => `₱${value.toLocaleString()}`}
+                formatter={(value) =>
+                  `₱${
+                    typeof value === "number" ? value.toLocaleString() : value
+                  }`
+                }
                 labelFormatter={(label) => `Day: ${label}`}
               />
             }
           />
-          <Bar
-            dataKey="average"
-            radius={[4, 4, 0, 0]}
-            name="Average Spending"
-          >
+          <Bar dataKey="average" radius={[4, 4, 0, 0]} name="Average Spending">
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
@@ -104,6 +107,5 @@ export default function SpendingByDayChart({ data }: SpendingByDayChartProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

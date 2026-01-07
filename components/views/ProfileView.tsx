@@ -4,10 +4,8 @@ import StreakBoard from "@/components/StreakBoard";
 import { Trophy, Settings, Bell, Shield, ChevronRight } from "lucide-react";
 
 interface ProfileViewProps {
-  data: {
-    user: unknown;
-    [key: string]: unknown;
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
 }
 
 export default function ProfileView({ data }: ProfileViewProps) {

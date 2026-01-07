@@ -6,12 +6,8 @@ import SpendingChart from "@/components/SpendingChart";
 import RecentTransactionsList from "@/components/RecentTransactionsList";
 
 interface DashboardViewProps {
-  data: {
-    user: unknown;
-    accounts: unknown[];
-    recentTransactions: unknown[];
-    [key: string]: unknown;
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
   onTabChange: (tab: string) => void;
 }
 
