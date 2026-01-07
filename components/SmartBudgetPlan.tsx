@@ -72,7 +72,7 @@ export default function SmartBudgetPlan({
     });
 
   // Calculate recommended amounts based on income
-  const income = monthlyIncome || user.spendingLimit || 0;
+  const income = monthlyIncome || 0;
   const recommended = {
     needs: (income * budgetRule.needs) / 100,
     wants: (income * budgetRule.wants) / 100,

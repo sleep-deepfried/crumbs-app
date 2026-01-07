@@ -30,7 +30,7 @@ export default function QuickFinancialBanner({
   const daysRemaining = daysInMonth - currentDay;
 
   // Calculate daily budget
-  const income = monthlyIncome || spendingLimit || 0;
+  const income = monthlyIncome || 0;
   const remaining = income - monthlyExpenses;
   const dailyBudget = daysRemaining > 0 ? remaining / daysRemaining : 0;
 
