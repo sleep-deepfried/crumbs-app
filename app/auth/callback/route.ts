@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { createUserProfile } from '@/app/actions/auth'
+import { getOnboardingStatus } from '@/app/actions/user'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -19,14 +20,23 @@ export async function GET(request: Request) {
         data.user.user_metadata?.full_name || data.user.user_metadata?.name
       )
       
+      // Check onboarding status
+      const onboardingStatus = await getOnboardingStatus(data.user.id)
+      
+      // Redirect to onboarding if not completed and not skipped
+      let redirectPath = next
+      if (!onboardingStatus.completed && !onboardingStatus.skipped) {
+        redirectPath = '/onboarding'
+      }
+      
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
       if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
+        return NextResponse.redirect(`${origin}${redirectPath}`)
       } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
+        return NextResponse.redirect(`https://${forwardedHost}${redirectPath}`)
       } else {
-        return NextResponse.redirect(`${origin}${next}`)
+        return NextResponse.redirect(`${origin}${redirectPath}`)
       }
     }
   }

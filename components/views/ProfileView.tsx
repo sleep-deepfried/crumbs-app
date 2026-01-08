@@ -1,7 +1,8 @@
 import { signout } from "@/app/actions/auth";
 import MascotStage from "@/components/MascotStage";
 import StreakBoard from "@/components/StreakBoard";
-import { Trophy, Settings, Bell, Shield, ChevronRight } from "lucide-react";
+import { Trophy, Settings, Bell, Shield, ChevronRight, RefreshCw } from "lucide-react";
+import Link from "next/link";
 
 interface ProfileViewProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -184,6 +185,25 @@ export default function ProfileView({ data }: ProfileViewProps) {
                 strokeWidth={2}
               />
             </button>
+            <Link href="/onboarding" className="w-full flex items-center justify-between p-3 bg-[#FDF6EC] rounded-xl hover:bg-[#E6C288]/20 transition-all group">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                  <RefreshCw
+                    size={16}
+                    className="text-[#4A3B32]"
+                    strokeWidth={2}
+                  />
+                </div>
+                <span className="text-sm font-semibold text-[#4A3B32]">
+                  Restart Onboarding
+                </span>
+              </div>
+              <ChevronRight
+                size={18}
+                className="text-[#4A3B32]/40 group-hover:text-[#4A3B32] transition-colors"
+                strokeWidth={2}
+              />
+            </Link>
           </div>
         </div>
 

@@ -26,6 +26,11 @@ model User {
   crumbMood      String   @default("HARMONY") // HARMONY, CRUMBLY, SOGGY
   brewLevel      Int      @default(1) // 1=Glass, 2=Mug, 3=Press
   
+  // Onboarding State
+  onboardingCompleted Boolean  @default(false)
+  onboardingStep      Int?     @default(0)
+  onboardingSkipped   Boolean  @default(false)
+  
   transactions           Transaction[]
   recurringTransactions  RecurringTransaction[]
   accounts               Account[]
@@ -152,4 +157,3 @@ model Account {
   @@index([userId])
   @@index([userId, category])
 }
-

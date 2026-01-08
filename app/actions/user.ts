@@ -52,7 +52,7 @@ export async function getDashboardData() {
   }
 
   // Get current month transactions
-  let transactions = await getUserTransactions(user.id)
+  const transactions = await getUserTransactions(user.id)
   
   // Get ALL transactions for analytics
   const allTimeTransactions = await prisma.transaction.findMany({
@@ -183,3 +183,148 @@ export async function getFriends(userId: string) {
   return friendships.map((f: { friend: { id: string; username: string; avatarUrl: string | null; crumbMood: string } }) => f.friend)
 }
 
+
+// Onboarding Actions
+
+export async function getOnboardingStatus(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        onboardingCompleted: true,
+        onboardingStep: true,
+        onboardingSkipped: true,
+      },
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    // Check if user has existing accounts
+    const accountCount = await prisma.account.count({
+      where: { userId },
+    })
+
+    return {
+      completed: user.onboardingCompleted,
+      step: user.onboardingStep ?? 0,
+      skipped: user.onboardingSkipped,
+      hasAccounts: accountCount > 0,
+    }
+  } catch (error) {
+    console.error('Error fetching onboarding status:', error)
+    throw error
+  }
+}
+
+export async function updateOnboardingStatus(
+  userId: string,
+  completed: boolean,
+  step?: number,
+  skipped?: boolean
+) {
+  try {
+    const updateData: {
+      onboardingCompleted: boolean
+      onboardingStep?: number
+      onboardingSkipped?: boolean
+    } = {
+      onboardingCompleted: completed,
+    }
+
+    if (step !== undefined) {
+      updateData.onboardingStep = step
+    }
+
+    if (skipped !== undefined) {
+      updateData.onboardingSkipped = skipped
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating onboarding status:', error)
+    throw error
+  }
+}
+
+export async function saveOnboardingData(
+  userId: string,
+  data: {
+    spendingLimit?: number
+    accountName?: string
+    accountType?: 'BANK' | 'E-WALLET' | 'CREDIT_CARD'
+    accountBalance?: number
+    accountColor?: string
+  }
+) {
+  try {
+    // Validate spending limit
+    if (data.spendingLimit !== undefined) {
+      if (typeof data.spendingLimit !== 'number' || data.spendingLimit <= 0) {
+        return {
+          success: false,
+          error: 'Spending limit must be a positive number',
+        }
+      }
+    }
+
+    // Validate account data if provided
+    if (data.accountName) {
+      if (!data.accountName.trim()) {
+        return {
+          success: false,
+          error: 'Account name is required',
+        }
+      }
+
+      if (!data.accountType) {
+        return {
+          success: false,
+          error: 'Account type is required',
+        }
+      }
+
+      if (data.accountBalance !== undefined && typeof data.accountBalance !== 'number') {
+        return {
+          success: false,
+          error: 'Account balance must be a number',
+        }
+      }
+    }
+
+    // Update user spending limit if provided
+    if (data.spendingLimit !== undefined) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { spendingLimit: data.spendingLimit },
+      })
+    }
+
+    // Create account if account data is provided
+    if (data.accountName && data.accountType) {
+      await prisma.account.create({
+        data: {
+          userId,
+          name: data.accountName.trim(),
+          type: data.accountType,
+          balance: data.accountBalance ?? 0,
+          color: data.accountColor,
+        },
+      })
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error saving onboarding data:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to save onboarding data',
+    }
+  }
+}
