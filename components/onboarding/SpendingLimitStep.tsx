@@ -1,21 +1,32 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { BudgetPlan } from "./BudgetPlanStep";
 
 interface SpendingLimitStepProps {
   onNext: (spendingLimit: number) => void;
   onBack: () => void;
+  monthlyIncome: number;
+  budgetPlan: BudgetPlan;
   initialValue?: number;
 }
 
 export default function SpendingLimitStep({
   onNext,
   onBack,
-  initialValue = 39500,
+  monthlyIncome,
+  budgetPlan,
+  initialValue,
 }: SpendingLimitStepProps) {
+  // Calculate suggested spending limit based on budget plan
+  const suggestedLimit = Math.round((monthlyIncome * (budgetPlan.needsPercentage + budgetPlan.wantsPercentage)) / 100);
+  
   const [spendingLimit, setSpendingLimit] = useState<string>(
-    initialValue.toString()
+    initialValue?.toString() || suggestedLimit.toString()
   );
   const [error, setError] = useState<string>("");
+  const [isCustom, setIsCustom] = useState<boolean>(
+    initialValue !== undefined && initialValue !== suggestedLimit
+  );
 
   // Validate on change
   const numValue = parseFloat(spendingLimit);
@@ -45,31 +56,88 @@ export default function SpendingLimitStep({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCurrency(e.target.value);
     setSpendingLimit(formatted);
+    setIsCustom(formatted !== suggestedLimit.toString());
+  };
+
+  const handleUseSuggested = () => {
+    setSpendingLimit(suggestedLimit.toString());
+    setIsCustom(false);
   };
 
   const isValid = spendingLimit && !error && parseFloat(spendingLimit) > 0;
+
+  // Calculate breakdown
+  const needsAmount = Math.round((monthlyIncome * budgetPlan.needsPercentage) / 100);
+  const wantsAmount = Math.round((monthlyIncome * budgetPlan.wantsPercentage) / 100);
+  const savingsAmount = Math.round((monthlyIncome * budgetPlan.savingsPercentage) / 100);
 
   return (
     <div className="flex flex-col px-6 py-8">
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-xl font-bold text-[#4A3B32] mb-2">
-          Set Your Monthly Spending Limit
+          Confirm Your Spending Limit
         </h2>
         <p className="text-sm text-[#4A3B32]/70">
-          This helps you track your expenses and stay within budget. You can
-          change this anytime in your profile.
+          Based on your {budgetPlan.name} and ₱{monthlyIncome.toLocaleString()} income, here&apos;s our recommendation:
         </p>
+      </div>
+
+      {/* Smart Suggestion Card */}
+      <div className="bg-[#A8D5BA]/10 border border-[#A8D5BA]/30 rounded-xl p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-[#4A3B32]">
+            Recommended Spending Limit
+          </h3>
+          <span className="text-2xl font-bold text-[#4A3B32]">
+            ₱{suggestedLimit.toLocaleString()}
+          </span>
+        </div>
+        
+        {/* Budget Breakdown */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="text-center p-3 bg-white rounded-lg">
+            <div className="text-xs text-[#4A3B32]/60 mb-1">Needs</div>
+            <div className="font-semibold text-[#4A3B32]">₱{needsAmount.toLocaleString()}</div>
+            <div className="text-xs text-[#4A3B32]/60">{budgetPlan.needsPercentage}%</div>
+          </div>
+          <div className="text-center p-3 bg-white rounded-lg">
+            <div className="text-xs text-[#4A3B32]/60 mb-1">Wants</div>
+            <div className="font-semibold text-[#4A3B32]">₱{wantsAmount.toLocaleString()}</div>
+            <div className="text-xs text-[#4A3B32]/60">{budgetPlan.wantsPercentage}%</div>
+          </div>
+          <div className="text-center p-3 bg-[#A8D5BA]/20 rounded-lg">
+            <div className="text-xs text-[#4A3B32]/60 mb-1">Savings</div>
+            <div className="font-semibold text-[#4A3B32]">₱{savingsAmount.toLocaleString()}</div>
+            <div className="text-xs text-[#4A3B32]/60">{budgetPlan.savingsPercentage}%</div>
+          </div>
+        </div>
+
+        {!isCustom && (
+          <div className="text-sm text-[#4A3B32]/70">
+            ✓ This follows your chosen {budgetPlan.name} perfectly
+          </div>
+        )}
       </div>
 
       {/* Input Field */}
       <div className="mb-6">
-        <label
-          htmlFor="spending-limit"
-          className="block text-sm font-medium text-[#4A3B32] mb-2"
-        >
-          Monthly Spending Limit
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label
+            htmlFor="spending-limit"
+            className="block text-sm font-medium text-[#4A3B32]"
+          >
+            Monthly Spending Limit
+          </label>
+          {isCustom && (
+            <button
+              onClick={handleUseSuggested}
+              className="text-xs text-[#4A3B32]/60 hover:text-[#4A3B32] underline"
+            >
+              Use suggested
+            </button>
+          )}
+        </div>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4A3B32] font-medium">
             ₱
@@ -80,8 +148,11 @@ export default function SpendingLimitStep({
             inputMode="decimal"
             value={spendingLimit}
             onChange={handleChange}
-            className="w-full pl-10 pr-4 py-3 border-2 border-[#E6C288] rounded-xl bg-white text-[#4A3B32] focus:outline-none focus:border-[#4A3B32] transition-colors"
-            placeholder="39500"
+            className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl bg-white text-[#4A3B32] focus:outline-none transition-colors ${
+              isCustom 
+                ? "border-[#E6C288] focus:border-[#4A3B32]" 
+                : "border-[#A8D5BA] focus:border-[#4A3B32] bg-[#A8D5BA]/5"
+            }`}
             aria-invalid={!!error}
             aria-describedby={error ? "spending-limit-error" : undefined}
           />
@@ -95,10 +166,30 @@ export default function SpendingLimitStep({
             {error}
           </p>
         )}
-        <p className="mt-2 text-xs text-[#4A3B32]/60">
-          Enter your desired monthly spending limit in Philippine Pesos (₱)
-        </p>
+        {isCustom && (
+          <p className="mt-2 text-xs text-[#4A3B32]/60">
+            You&apos;ve customized your spending limit. This may affect your savings goal.
+          </p>
+        )}
+        {!isCustom && (
+          <p className="mt-2 text-xs text-[#4A3B32]/60">
+            This amount aligns with your {budgetPlan.name} for optimal financial health.
+          </p>
+        )}
       </div>
+
+      {/* Custom Amount Warning */}
+      {isCustom && parseFloat(spendingLimit) > suggestedLimit && (
+        <div className="bg-[#D9534F]/10 border border-[#D9534F]/30 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[#D9534F]">⚠️</span>
+            <h4 className="font-semibold text-[#D9534F]">Higher than recommended</h4>
+          </div>
+          <p className="text-sm text-[#D9534F]/80">
+            This exceeds your {budgetPlan.name} allocation and may impact your savings goals.
+          </p>
+        </div>
+      )}
 
       {/* Navigation Buttons */}
       <div className="flex items-center justify-between mt-auto pt-6">

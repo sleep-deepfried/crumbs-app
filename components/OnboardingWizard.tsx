@@ -8,8 +8,11 @@ import {
   saveOnboardingData,
 } from "@/app/actions/user";
 import WelcomeStep from "@/components/onboarding/WelcomeStep";
-import SpendingLimitStep from "@/components/onboarding/SpendingLimitStep";
 import AccountSetupStep from "@/components/onboarding/AccountSetupStep";
+import MonthlyIncomeStep from "@/components/onboarding/MonthlyIncomeStep";
+import BudgetPlanStep, { BudgetPlan } from "@/components/onboarding/BudgetPlanStep";
+import SpendingLimitStep from "@/components/onboarding/SpendingLimitStep";
+import FinancialGoalsStep, { FinancialGoal } from "@/components/onboarding/FinancialGoalsStep";
 import FeaturesStep from "@/components/onboarding/FeaturesStep";
 import CompletionStep from "@/components/onboarding/CompletionStep";
 
@@ -20,14 +23,17 @@ interface OnboardingWizardProps {
 }
 
 interface FormData {
+  monthlyIncome: number;
+  budgetPlan: BudgetPlan | null;
   spendingLimit: number;
+  financialGoals: FinancialGoal[];
   accountName: string;
   accountType: "BANK" | "E-WALLET" | "CREDIT_CARD";
   accountBalance: number;
   accountColor?: string;
 }
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 8;
 const DEFAULT_SPENDING_LIMIT = 39500;
 
 export default function OnboardingWizard({
@@ -44,7 +50,10 @@ export default function OnboardingWizard({
 
   // Form data state
   const [formData, setFormData] = useState<FormData>({
+    monthlyIncome: 0,
+    budgetPlan: null,
     spendingLimit: DEFAULT_SPENDING_LIMIT,
+    financialGoals: [],
     accountName: "",
     accountType: "BANK",
     accountBalance: 0,
@@ -80,14 +89,6 @@ export default function OnboardingWizard({
   }, [userId, currentStep, router, showSuccess, showError]);
 
   // Step-specific handlers
-  const handleSpendingLimitNext = useCallback(
-    (spendingLimit: number) => {
-      setFormData((prev) => ({ ...prev, spendingLimit }));
-      handleNext();
-    },
-    [handleNext]
-  );
-
   const handleAccountSetupNext = useCallback(
     (accountData: {
       name: string;
@@ -116,6 +117,38 @@ export default function OnboardingWizard({
     handleNext();
   }, [handleNext]);
 
+  const handleMonthlyIncomeNext = useCallback(
+    (monthlyIncome: number) => {
+      setFormData((prev) => ({ ...prev, monthlyIncome }));
+      handleNext();
+    },
+    [handleNext]
+  );
+
+  const handleBudgetPlanNext = useCallback(
+    (budgetPlan: BudgetPlan) => {
+      setFormData((prev) => ({ ...prev, budgetPlan }));
+      handleNext();
+    },
+    [handleNext]
+  );
+
+  const handleSpendingLimitNext = useCallback(
+    (spendingLimit: number) => {
+      setFormData((prev) => ({ ...prev, spendingLimit }));
+      handleNext();
+    },
+    [handleNext]
+  );
+
+  const handleFinancialGoalsNext = useCallback(
+    (financialGoals: FinancialGoal[]) => {
+      setFormData((prev) => ({ ...prev, financialGoals }));
+      handleNext();
+    },
+    [handleNext]
+  );
+
   const handleComplete = useCallback(async () => {
     setIsProcessing(true);
     try {
@@ -138,12 +171,8 @@ export default function OnboardingWizard({
 
       showSuccess("Welcome to Crumbs! Your account is all set up.");
 
-      // Redirect based on user type
-      if (isReturningUser) {
-        router.push("/profile");
-      } else {
-        router.push("/");
-      }
+      // Redirect to home page
+      router.push("/");
     } catch (error) {
       console.error("Error completing onboarding:", error);
       showError("Failed to complete onboarding. Please try again.");
@@ -166,14 +195,6 @@ export default function OnboardingWizard({
         return <WelcomeStep onNext={handleNext} />;
       case 1:
         return (
-          <SpendingLimitStep
-            onNext={handleSpendingLimitNext}
-            onBack={handleBack}
-            initialValue={formData.spendingLimit}
-          />
-        );
-      case 2:
-        return (
           <AccountSetupStep
             onNext={handleAccountSetupNext}
             onBack={handleBack}
@@ -191,16 +212,57 @@ export default function OnboardingWizard({
             }
           />
         );
+      case 2:
+        return (
+          <MonthlyIncomeStep
+            onNext={handleMonthlyIncomeNext}
+            onBack={handleBack}
+            initialValue={formData.monthlyIncome}
+          />
+        );
       case 3:
-        return <FeaturesStep onNext={handleNext} onBack={handleBack} />;
+        return (
+          <BudgetPlanStep
+            onNext={handleBudgetPlanNext}
+            onBack={handleBack}
+            monthlyIncome={formData.monthlyIncome}
+            initialValue={formData.budgetPlan || undefined}
+          />
+        );
       case 4:
+        return (
+          <SpendingLimitStep
+            onNext={handleSpendingLimitNext}
+            onBack={handleBack}
+            monthlyIncome={formData.monthlyIncome}
+            budgetPlan={formData.budgetPlan!}
+            initialValue={formData.spendingLimit}
+          />
+        );
+      case 5:
+        return (
+          <FinancialGoalsStep
+            onNext={handleFinancialGoalsNext}
+            onBack={handleBack}
+            monthlyIncome={formData.monthlyIncome}
+            savingsAmount={Math.round((formData.monthlyIncome * (formData.budgetPlan?.savingsPercentage || 20)) / 100)}
+            initialValue={formData.financialGoals}
+          />
+        );
+      case 6:
+        return <FeaturesStep onNext={handleNext} onBack={handleBack} />;
+      case 7:
         return (
           <CompletionStep
             onComplete={handleComplete}
             summary={{
+              monthlyIncome: formData.monthlyIncome,
+              budgetPlan: formData.budgetPlan?.name,
               spendingLimit: formData.spendingLimit,
+              savingsGoal: formData.budgetPlan ? Math.round((formData.monthlyIncome * formData.budgetPlan.savingsPercentage) / 100) : undefined,
               accountName: formData.accountName || undefined,
               accountType: formData.accountName ? formData.accountType : undefined,
+              financialGoalsCount: formData.financialGoals.length,
             }}
           />
         );

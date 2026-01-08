@@ -8,6 +8,10 @@ interface CompletionStepProps {
     spendingLimit?: number;
     accountName?: string;
     accountType?: string;
+    monthlyIncome?: number;
+    budgetPlan?: string;
+    savingsGoal?: number;
+    financialGoalsCount?: number;
   };
 }
 
@@ -55,16 +59,36 @@ export default function CompletionStep({
       </h2>
 
       <p className="text-base text-[#4A3B32]/80 mb-6 max-w-sm">
-        Your Crumbs account is ready. Let&apos;s start tracking your financial journey!
+        Your personalized financial plan is ready. Let&apos;s start your journey to better money management!
       </p>
 
-      {/* Summary Card */}
-      {(summary.spendingLimit || summary.accountName) && (
+      {/* Enhanced Summary Card */}
+      {(summary.spendingLimit || summary.accountName || summary.monthlyIncome) && (
         <div className="card-crumbs p-5 mb-8 w-full max-w-sm text-left">
           <h3 className="font-semibold text-[#4A3B32] mb-3 text-center">
-            Your Settings
+            Your Financial Plan
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
+            {summary.monthlyIncome && (
+              <div className="flex justify-between items-center py-2 border-b border-[#E6C288]/30">
+                <span className="text-sm text-[#4A3B32]/70">
+                  Monthly Income
+                </span>
+                <span className="font-medium text-[#4A3B32]">
+                  ₱{summary.monthlyIncome.toLocaleString()}
+                </span>
+              </div>
+            )}
+            {summary.budgetPlan && (
+              <div className="flex justify-between items-center py-2 border-b border-[#E6C288]/30">
+                <span className="text-sm text-[#4A3B32]/70">
+                  Budget Plan
+                </span>
+                <span className="font-medium text-[#4A3B32]">
+                  {summary.budgetPlan}
+                </span>
+              </div>
+            )}
             {summary.spendingLimit && (
               <div className="flex justify-between items-center py-2 border-b border-[#E6C288]/30">
                 <span className="text-sm text-[#4A3B32]/70">
@@ -75,8 +99,18 @@ export default function CompletionStep({
                 </span>
               </div>
             )}
+            {summary.savingsGoal && (
+              <div className="flex justify-between items-center py-2 border-b border-[#E6C288]/30">
+                <span className="text-sm text-[#4A3B32]/70">
+                  Monthly Savings Goal
+                </span>
+                <span className="font-medium text-[#A8D5BA]">
+                  ₱{summary.savingsGoal.toLocaleString()}
+                </span>
+              </div>
+            )}
             {summary.accountName && (
-              <div className="flex justify-between items-center py-2">
+              <div className="flex justify-between items-center py-2 border-b border-[#E6C288]/30">
                 <span className="text-sm text-[#4A3B32]/70">
                   First Account
                 </span>
@@ -90,9 +124,26 @@ export default function CompletionStep({
                 </div>
               </div>
             )}
+            {summary.financialGoalsCount && summary.financialGoalsCount > 0 && (
+              <div className="flex justify-between items-center py-2">
+                <span className="text-sm text-[#4A3B32]/70">
+                  Financial Goals
+                </span>
+                <span className="font-medium text-[#4A3B32]">
+                  {summary.financialGoalsCount} goal{summary.financialGoalsCount > 1 ? 's' : ''} set
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* Motivational Message */}
+      <div className="bg-[#A8D5BA]/10 border border-[#A8D5BA]/30 rounded-xl p-4 mb-6 w-full max-w-sm">
+        <p className="text-sm text-[#4A3B32]/80">
+          🎉 You&apos;re now ready to take control of your finances with a personalized plan that fits your lifestyle!
+        </p>
+      </div>
 
       {/* Start Tracking Button */}
       <Button
@@ -100,11 +151,11 @@ export default function CompletionStep({
         className="bg-[#4A3B32] hover:bg-[#4A3B32]/90 text-white px-8 py-6 text-base rounded-xl"
         size="lg"
       >
-        Start Tracking
+        Start Your Financial Journey
       </Button>
 
       <p className="text-xs text-[#4A3B32]/50 mt-4">
-        You can change these settings anytime in your profile
+        You can adjust these settings anytime in your profile
       </p>
     </div>
   );
